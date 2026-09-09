@@ -1,7 +1,8 @@
 import {
+  Check,
+  ChevronDown,
   LoaderCircle,
   Languages,
-  Scissors,
   TriangleAlert,
   X,
   type LucideIcon,
@@ -9,13 +10,22 @@ import {
 import {
   useEffect,
   useId,
+  useRef,
+  useState,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink } from 'react-router-dom'
 import { useI18n, type Language } from '../i18n-context'
+
+const languageOptions = [
+  { value: 'ro', code: 'RO', label: 'Română' },
+  { value: 'en', code: 'EN', label: 'English' },
+  { value: 'ru', code: 'RU', label: 'Русский' },
+] satisfies Array<{ value: Language; code: string; label: string }>
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
@@ -193,14 +203,134 @@ export function Modal({
   )
 }
 
-export function AppHeader({ admin = false }: { admin?: boolean }) {
+function LanguageSwitcher() {
   const { language, setLanguage, t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const listId = useId()
+  const current =
+    languageOptions.find((option) => option.value === language) ??
+    languageOptions[0]
+
+  useEffect(() => {
+    if (!open) return
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !rootRef.current?.contains(event.target)
+      ) {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsideClick)
+    return () =>
+      document.removeEventListener('pointerdown', closeOnOutsideClick)
+  }, [open])
+
+  const focusOption = (edge: 'first' | 'last') => {
+    requestAnimationFrame(() => {
+      const options =
+        rootRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]')
+      options?.[edge === 'first' ? 0 : options.length - 1]?.focus()
+    })
+  }
+
+  const openAndFocus = (edge: 'first' | 'last') => {
+    setOpen(true)
+    focusOption(edge)
+  }
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape' && open) {
+      event.preventDefault()
+      setOpen(false)
+      triggerRef.current?.focus()
+      return
+    }
+    if (!open || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) return
+
+    event.preventDefault()
+    const options = Array.from(
+      rootRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]') ??
+        [],
+    )
+    const activeIndex = options.indexOf(
+      document.activeElement as HTMLButtonElement,
+    )
+    const direction = event.key === 'ArrowDown' ? 1 : -1
+    const nextIndex =
+      activeIndex < 0
+        ? direction > 0
+          ? 0
+          : options.length - 1
+        : (activeIndex + direction + options.length) % options.length
+    options[nextIndex]?.focus()
+  }
+
+  return (
+    <div className="language-switcher" ref={rootRef} onKeyDown={handleKeyDown}>
+      <button
+        className="language-switcher__trigger"
+        type="button"
+        ref={triggerRef}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        aria-label={`${t('Limba interfeței')}: ${current.label}`}
+        onClick={() => setOpen((value) => !value)}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault()
+            openAndFocus(event.key === 'ArrowDown' ? 'first' : 'last')
+          }
+        }}
+      >
+        <Languages aria-hidden="true" />
+        <span>{current.code}</span>
+        <ChevronDown aria-hidden="true" className={open ? 'is-open' : ''} />
+      </button>
+      {open ? (
+        <div
+          className="language-switcher__menu"
+          id={listId}
+          role="listbox"
+          aria-label={t('Limba interfeței')}
+        >
+          {languageOptions.map((option) => (
+            <button
+              className="language-switcher__option"
+              type="button"
+              role="option"
+              aria-selected={option.value === language}
+              key={option.value}
+              onClick={() => {
+                setLanguage(option.value)
+                setOpen(false)
+                triggerRef.current?.focus()
+              }}
+            >
+              <span className="language-switcher__code">{option.code}</span>
+              <span>{option.label}</span>
+              <Check aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+export function AppHeader({ admin = false }: { admin?: boolean }) {
+  const { t } = useI18n()
   return (
     <header className="site-header">
       <div className="site-header__inner">
         <Link className="brand" to="/" aria-label={t('Pagina principală')}>
           <span className="brand__mark">
-            <Scissors aria-hidden="true" />
+            <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" />
           </span>
           <span>
             <strong>{t('PROGRAMARE')}</strong>
@@ -223,19 +353,7 @@ export function AppHeader({ admin = false }: { admin?: boolean }) {
               </NavLink>
             </>
           )}
-          <label className="language-switcher">
-            <Languages aria-hidden="true" />
-            <span className="sr-only">{t('Limba interfeței')}</span>
-            <select
-              value={language}
-              onChange={(event) => setLanguage(event.target.value as Language)}
-              aria-label={t('Limba interfeței')}
-            >
-              <option value="ro">RO</option>
-              <option value="en">EN</option>
-              <option value="ru">RU</option>
-            </select>
-          </label>
+          <LanguageSwitcher />
         </nav>
       </div>
     </header>

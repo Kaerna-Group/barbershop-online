@@ -69,10 +69,15 @@ Edge Function `send-notifications` ожидает универсальный HTT
 supabase secrets set SMS_WEBHOOK_URL=https://provider.example/send
 supabase secrets set SMS_WEBHOOK_TOKEN=...
 supabase secrets set NOTIFICATION_WORKER_SECRET=...
-supabase functions deploy send-notifications --no-verify-jwt
+supabase functions deploy send-notifications
 ```
 
-В Supabase Cron создайте POST-вызов функции раз в минуту и передавайте `x-worker-secret`. Секрет не храните в репозитории. Сбой SMS не удаляет запись; задача повторяется с увеличивающейся задержкой до пяти попыток.
+В Supabase Cron создайте POST-вызов функции раз в минуту. Передавайте два заголовка:
+
+- `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>` — для проверки JWT на входе Edge Function;
+- `x-worker-secret: <NOTIFICATION_WORKER_SECRET>` — второй независимый секрет воркера.
+
+Оба значения храните в Supabase Vault или в защищённых настройках планировщика, не в SQL миграции и не в репозитории. Сбой SMS не удаляет запись; задача повторяется с увеличивающейся задержкой до пяти попыток.
 
 ## 6. GitHub Pages
 

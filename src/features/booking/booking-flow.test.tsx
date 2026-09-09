@@ -41,9 +41,15 @@ describe('BookingFlow', () => {
       </I18nProvider>,
     )
 
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: 'Limba interfeței' }),
-      'en',
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Limba interfeței: Română',
+      }),
+    )
+    await user.click(
+      screen.getByRole('option', {
+        name: 'EN English',
+      }),
     )
 
     expect(

@@ -10,7 +10,7 @@ max_rows = 1000
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
+major_version = 17
 
 [studio]
 enabled = true
@@ -18,7 +18,7 @@ port = 54323
 
 [auth]
 enabled = true
-site_url = "http://localhost:5173"
+site_url = "https://kaerna-group.github.io/barbershop-online/"
 additional_redirect_urls = [
   "http://localhost:5173/**",
   "https://kaerna-group.github.io/barbershop-online/**"
@@ -33,4 +33,4 @@ template = "Codul tău pentru programare este {{ .Code }}"
 max_frequency = "60s"
 
 [functions.send-notifications]
-verify_jwt = false
+verify_jwt = true

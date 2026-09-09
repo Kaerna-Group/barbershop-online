@@ -5,6 +5,13 @@ import {
   fallbackSchedule,
 } from '../data/fallback'
 import {
+  mockBackend,
+  MockBackendError,
+  mockMasterCredentials,
+  mockOtpCode,
+} from '../data/mock-backend'
+import {
+  isMockMode,
   isSupabaseConfigured,
   requireSupabase,
   supabase,
@@ -98,7 +105,19 @@ function throwApiError(error: { message: string; code?: string } | null) {
   )
 }
 
+function runMock<T>(operation: () => T): T {
+  try {
+    return operation()
+  } catch (error) {
+    if (error instanceof MockBackendError) {
+      throw new AppError(error.code, error.message)
+    }
+    throw error
+  }
+}
+
 export async function getPublicConfig(): Promise<PublicConfig> {
+  if (isMockMode) return mockBackend.getPublicConfig()
   if (!supabase) return fallbackConfig
 
   const { data, error } = await supabase.rpc('get_public_config')
@@ -145,6 +164,7 @@ export async function getAvailableSlots(
   date: string,
   service: Service,
 ): Promise<TimeSlot[]> {
+  if (isMockMode) return mockBackend.getAvailableSlots(date, service)
   if (!supabase) return buildDemoSlots(date, service.durationMinutes)
 
   const { data, error } = await supabase.rpc('get_available_slots', {
@@ -160,6 +180,7 @@ export async function getAvailableSlots(
 }
 
 export async function requestPhoneCode(phone: string) {
+  if (isMockMode) return runMock(() => mockBackend.requestPhoneCode(phone))
   const client = requireSupabase()
   const { error } = await client.auth.signInWithOtp({
     phone,
@@ -169,6 +190,8 @@ export async function requestPhoneCode(phone: string) {
 }
 
 export async function verifyPhoneCode(phone: string, token: string) {
+  if (isMockMode)
+    return runMock(() => mockBackend.verifyPhoneCode(phone, token))
   const client = requireSupabase()
   const { data, error } = await client.auth.verifyOtp({
     phone,
@@ -180,6 +203,9 @@ export async function verifyPhoneCode(phone: string, token: string) {
 }
 
 export async function signInMaster(email: string, password: string) {
+  if (isMockMode) {
+    return runMock(() => mockBackend.signInMaster(email, password))
+  }
   const client = requireSupabase()
   const { data, error } = await client.auth.signInWithPassword({
     email,
@@ -204,12 +230,14 @@ export async function signInMaster(email: string, password: string) {
 }
 
 export async function signOut() {
+  if (isMockMode) return mockBackend.signOut()
   if (!supabase) return
   const { error } = await supabase.auth.signOut()
   throwApiError(error)
 }
 
 export async function getSession(): Promise<Session | null> {
+  if (isMockMode) return mockBackend.getSession()
   if (!supabase) return null
   const { data, error } = await supabase.auth.getSession()
   throwApiError(error)
@@ -217,6 +245,7 @@ export async function getSession(): Promise<Session | null> {
 }
 
 export function subscribeToAuth(callback: (session: Session | null) => void) {
+  if (isMockMode) return mockBackend.subscribe(callback)
   if (!supabase) return () => undefined
   const { data } = supabase.auth.onAuthStateChange((_event, session) =>
     callback(session),
@@ -230,12 +259,9 @@ export async function createBooking(input: {
   clientName: string
   requestId: string
 }) {
-  if (!supabase) {
-    throw new AppError(
-      'DEMO_MODE',
-      'Conectează proiectul Supabase pentru a confirma programarea.',
-    )
-  }
+  if (isMockMode) return runMock(() => mockBackend.createBooking(input))
+  if (!supabase)
+    throw new AppError('SUPABASE_NOT_CONFIGURED', 'Supabase is not configured.')
 
   const { data, error } = await supabase.rpc('create_booking', {
     p_client_name: input.clientName,
@@ -248,6 +274,7 @@ export async function createBooking(input: {
 }
 
 export async function getMyBookings() {
+  if (isMockMode) return runMock(() => mockBackend.getMyBookings())
   const client = requireSupabase()
   const { data, error } = await client
     .from('calendar_entries')
@@ -265,6 +292,9 @@ export async function cancelBooking(
   version: number,
   requestId: string,
 ) {
+  if (isMockMode) {
+    return runMock(() => mockBackend.cancelBooking(bookingId, version))
+  }
   const client = requireSupabase()
   const { data, error } = await client.rpc('cancel_booking', {
     p_booking_id: bookingId,
@@ -281,6 +311,11 @@ export async function rescheduleBooking(
   version: number,
   requestId: string,
 ) {
+  if (isMockMode) {
+    return runMock(() =>
+      mockBackend.rescheduleBooking(bookingId, startsAt, version),
+    )
+  }
   const client = requireSupabase()
   const { data, error } = await client.rpc('reschedule_booking', {
     p_booking_id: bookingId,
@@ -296,6 +331,9 @@ export async function getRescheduleSlots(
   date: string,
   bookingId: string,
 ): Promise<TimeSlot[]> {
+  if (isMockMode) {
+    return runMock(() => mockBackend.getRescheduleSlots(date, bookingId))
+  }
   const client = requireSupabase()
   const { data, error } = await client.rpc('get_reschedule_slots', {
     p_booking_id: bookingId,
@@ -309,6 +347,7 @@ export async function getRescheduleSlots(
 }
 
 export async function isCurrentUserMaster() {
+  if (isMockMode) return mockBackend.isCurrentUserMaster()
   if (!supabase) return false
   const { data, error } = await supabase.rpc('is_current_user_master')
   throwApiError(error)
@@ -319,6 +358,9 @@ export async function getAdminCalendar(
   from: string,
   to: string,
 ): Promise<CalendarEntry[]> {
+  if (isMockMode) {
+    return runMock(() => mockBackend.getAdminCalendar(from, to))
+  }
   if (!supabase) return []
   const { data, error } = await supabase.rpc('admin_list_calendar', {
     p_from: from,
@@ -333,6 +375,7 @@ export async function getAdminCalendar(
 }
 
 export async function getWeeklySchedule(): Promise<WeeklyWindow[]> {
+  if (isMockMode) return runMock(() => mockBackend.getWeeklySchedule())
   if (!supabase) return fallbackSchedule
   const { data, error } = await supabase.rpc('admin_get_weekly_schedule')
   throwApiError(error)
@@ -345,6 +388,9 @@ export async function getWeeklySchedule(): Promise<WeeklyWindow[]> {
 }
 
 export async function saveWeeklySchedule(windows: WeeklyWindow[]) {
+  if (isMockMode) {
+    return runMock(() => mockBackend.saveWeeklySchedule(windows))
+  }
   const client = requireSupabase()
   const { error } = await client.rpc('admin_replace_weekly_schedule', {
     p_windows: windows.map((item) => ({
@@ -360,6 +406,9 @@ export async function adminSaveScheduleOverride(
   day: string,
   windows: Array<{ start: string; end: string }>,
 ) {
+  if (isMockMode) {
+    return runMock(() => mockBackend.saveScheduleOverride(day, windows))
+  }
   const client = requireSupabase()
   const { error } = await client.rpc('admin_set_schedule_override', {
     p_day: day,
@@ -375,6 +424,9 @@ export async function adminCreateBlock(input: {
   note: string
   requestId: string
 }) {
+  if (isMockMode) {
+    return runMock(() => mockBackend.adminCreateBlock(input))
+  }
   const client = requireSupabase()
   const { error } = await client.rpc('admin_create_block', {
     p_day: input.day,
@@ -393,6 +445,9 @@ export async function adminCreateBooking(input: {
   clientPhone: string
   requestId: string
 }) {
+  if (isMockMode) {
+    return runMock(() => mockBackend.adminCreateBooking(input))
+  }
   const client = requireSupabase()
   const { data, error } = await client.rpc('admin_create_booking', {
     p_client_name: input.clientName,
@@ -410,6 +465,11 @@ export async function adminSetBookingStatus(
   status: Booking['status'],
   version: number,
 ) {
+  if (isMockMode) {
+    return runMock(() =>
+      mockBackend.adminSetBookingStatus(bookingId, status, version),
+    )
+  }
   const client = requireSupabase()
   const { data, error } = await client.rpc('admin_set_booking_status', {
     p_booking_id: bookingId,
@@ -425,6 +485,11 @@ export async function adminRescheduleBooking(
   startsAt: string,
   version: number,
 ) {
+  if (isMockMode) {
+    return runMock(() =>
+      mockBackend.adminRescheduleBooking(bookingId, startsAt, version),
+    )
+  }
   const client = requireSupabase()
   const { data, error } = await client.rpc('admin_reschedule_booking', {
     p_booking_id: bookingId,
@@ -436,6 +501,9 @@ export async function adminRescheduleBooking(
 }
 
 export async function adminSavePublicProfile(input: PublicConfig['profile']) {
+  if (isMockMode) {
+    return runMock(() => mockBackend.savePublicProfile(input))
+  }
   const client = requireSupabase()
   const { error } = await client.rpc('admin_update_public_profile', {
     p_address_line: input.addressLine,
@@ -450,6 +518,9 @@ export async function adminSavePublicProfile(input: PublicConfig['profile']) {
 }
 
 export async function adminSaveSettings(input: PublicConfig['settings']) {
+  if (isMockMode) {
+    return runMock(() => mockBackend.saveSettings(input))
+  }
   const client = requireSupabase()
   const { error } = await client.rpc('admin_update_booking_settings', {
     p_booking_enabled: input.bookingEnabled,
@@ -464,6 +535,7 @@ export async function adminSaveSettings(input: PublicConfig['settings']) {
 }
 
 export async function adminSaveService(service: Service) {
+  if (isMockMode) return runMock(() => mockBackend.saveService(service))
   const client = requireSupabase()
   const { error } = await client.rpc('admin_upsert_service', {
     p_active: service.active,
@@ -477,4 +549,8 @@ export async function adminSaveService(service: Service) {
   throwApiError(error)
 }
 
-export { isSupabaseConfigured }
+export function resetMockBackend() {
+  mockBackend.reset()
+}
+
+export { isMockMode, isSupabaseConfigured, mockMasterCredentials, mockOtpCode }

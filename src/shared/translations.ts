@@ -80,6 +80,8 @@ const russian: Record<string, string> = {
   'Mod demonstrativ.': 'Деморежим.',
   'Poți parcurge alegerea serviciului și a orei; confirmarea devine activă după conectarea Supabase.':
     'Можно выбрать услугу и время; подтверждение заработает после подключения Supabase.',
+  'Poți testa programarea completă cu orice număr valid și codul {code}. Datele dispar după reîncărcare.':
+    'Можно полностью проверить запись: введи любой корректный номер и код {code}. После перезагрузки данные сбросятся.',
   'Ce alegi?': 'Что выбираешь?',
   'Durata este rezervată integral pentru tine.':
     'Вся продолжительность зарезервирована для тебя.',
@@ -123,6 +125,8 @@ const russian: Record<string, string> = {
     'Не удалось отправить код. Попробуй ещё раз через несколько минут.',
   'Codul nu este valid sau a expirat. Cere un cod nou.':
     'Код неверен или истёк. Запроси новый код.',
+  'Cod de test: {code}. Nu se trimite niciun SMS.':
+    'Тестовый код: {code}. SMS не отправляется.',
   'Acces securizat': 'Безопасный доступ',
   'Vizitele tale, într-un singur loc.': 'Все твои визиты в одном месте.',
   'Folosește același număr confirmat la programare. Nu ai nevoie de parolă sau email.':
@@ -186,6 +190,8 @@ const russian: Record<string, string> = {
     'Управляй записями и рабочим временем. Доступ разрешён только одному аккаунту.',
   'Autentificarea reală devine activă după configurarea Supabase. Poți vedea acum panoul în mod demonstrativ, fără modificări salvate.':
     'Настоящий вход заработает после настройки Supabase. Пока панель доступна в деморежиме без сохранения изменений.',
+  'Intrare de test: folosește datele deja completate. Modificările dispar după reîncărcarea paginii.':
+    'Тестовый вход: используй уже заполненные данные. Изменения сбросятся после перезагрузки страницы.',
   Parolă: 'Пароль',
   Email: 'Email',
   'Intră în panou': 'Войти в панель',
@@ -340,6 +346,8 @@ const russian: Record<string, string> = {
   'Ieși din cont': 'Выйти из аккаунта',
   'Panoul este doar pentru previzualizare; datele nu sunt salvate.':
     'Панель доступна только для просмотра; данные не сохраняются.',
+  'Modificările sunt păstrate doar în această sesiune de test și dispar după reîncărcare.':
+    'Изменения сохраняются только в текущей тестовой сессии и исчезнут после перезагрузки.',
   'Pregătim panoul…': 'Готовим панель…',
   'Configurația lipsește.': 'Конфигурация отсутствует.',
   // RU_TRANSLATIONS
@@ -427,6 +435,8 @@ const english: Record<string, string> = {
   'Mod demonstrativ.': 'Demo mode.',
   'Poți parcurge alegerea serviciului și a orei; confirmarea devine activă după conectarea Supabase.':
     'You can choose a service and time; confirmation becomes available after Supabase is connected.',
+  'Poți testa programarea completă cu orice număr valid și codul {code}. Datele dispar după reîncărcare.':
+    'You can test the complete booking flow with any valid phone number and code {code}. Data resets after a reload.',
   'Ce alegi?': 'What would you like?',
   'Durata este rezervată integral pentru tine.':
     'The full duration is reserved for you.',
@@ -469,6 +479,8 @@ const english: Record<string, string> = {
     'The code could not be sent. Try again in a few moments.',
   'Codul nu este valid sau a expirat. Cere un cod nou.':
     'The code is invalid or expired. Request a new code.',
+  'Cod de test: {code}. Nu se trimite niciun SMS.':
+    'Test code: {code}. No SMS is sent.',
   'Acces securizat': 'Secure access',
   'Vizitele tale, într-un singur loc.': 'All your appointments in one place.',
   'Folosește același număr confirmat la programare. Nu ai nevoie de parolă sau email.':
@@ -534,6 +546,8 @@ const english: Record<string, string> = {
     'Manage appointments and working hours. Access is limited to one account.',
   'Autentificarea reală devine activă după configurarea Supabase. Poți vedea acum panoul în mod demonstrativ, fără modificări salvate.':
     'Real sign-in becomes available after Supabase is configured. You can preview the dashboard in demo mode without saving changes.',
+  'Intrare de test: folosește datele deja completate. Modificările dispar după reîncărcarea paginii.':
+    'Test sign-in: use the prefilled credentials. Changes reset after the page reloads.',
   Parolă: 'Password',
   Email: 'Email',
   'Intră în panou': 'Open dashboard',
@@ -688,6 +702,8 @@ const english: Record<string, string> = {
   'Ieși din cont': 'Sign out',
   'Panoul este doar pentru previzualizare; datele nu sunt salvate.':
     'The dashboard is for preview only; data is not saved.',
+  'Modificările sunt păstrate doar în această sesiune de test și dispar după reîncărcare.':
+    'Changes are kept only for this test session and disappear after a reload.',
   'Pregătim panoul…': 'Preparing the dashboard…',
   'Configurația lipsește.': 'Configuration is missing.',
   // EN_TRANSLATIONS

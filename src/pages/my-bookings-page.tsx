@@ -17,6 +17,7 @@ import {
   getPublicConfig,
   getRescheduleSlots,
   getSession,
+  isMockMode,
   isSupabaseConfigured,
   rescheduleBooking,
   signOut,
@@ -275,7 +276,7 @@ export default function MyBookingsPage() {
       <main className="account-page">
         {sessionLoading || !config ? (
           <LoadingState label={t('Verificăm accesul…')} />
-        ) : !isSupabaseConfigured ? (
+        ) : !isSupabaseConfigured && !isMockMode ? (
           <div className="account-page__auth">
             <Notice tone="warning">
               {t(

@@ -14,7 +14,7 @@ import {
   UserRoundPlus,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   adminCreateBlock,
   adminCreateBooking,
@@ -31,11 +31,10 @@ import {
   getSession,
   getWeeklySchedule,
   isCurrentUserMaster,
-  isSupabaseConfigured,
+  isMockMode,
   saveWeeklySchedule,
   signOut,
 } from '../shared/api/barber-api'
-import { fallbackConfig } from '../shared/data/fallback'
 import {
   addDaysToDateInput,
   formatLongDate,
@@ -43,7 +42,7 @@ import {
   statusLabel,
   todayInTimeZone,
 } from '../shared/lib/format'
-import { useI18n, type Translate } from '../shared/i18n-context'
+import { useI18n } from '../shared/i18n-context'
 import type {
   Booking,
   CalendarEntry,
@@ -75,65 +74,12 @@ function getDayNames(locale: string) {
   })
 }
 
-function demoEntries(
-  date: string,
-  service: Service,
-  t: Translate,
-): CalendarEntry[] {
-  const start = new Date(`${date}T10:00:00+03:00`)
-  const secondStart = new Date(`${date}T12:30:00+03:00`)
-  return [
-    {
-      id: 'demo-booking-1',
-      kind: 'booking',
-      serviceId: service.id,
-      startsAt: start.toISOString(),
-      endsAt: new Date(
-        start.getTime() + service.durationMinutes * 60_000,
-      ).toISOString(),
-      status: 'confirmed',
-      clientName: t('Client demonstrativ'),
-      clientPhone: '+40 ••• ••• 112',
-      serviceName: service.name,
-      priceMinor: service.priceMinor,
-      currency: service.currency,
-      durationMinutes: service.durationMinutes,
-      version: 1,
-      notificationState: 'sent',
-      createdByMaster: false,
-    },
-    {
-      id: 'demo-block-1',
-      kind: 'block',
-      serviceId: '',
-      startsAt: secondStart.toISOString(),
-      endsAt: new Date(secondStart.getTime() + 30 * 60_000).toISOString(),
-      status: 'confirmed',
-      clientName: '',
-      clientPhone: '',
-      serviceName: t('Pauză'),
-      priceMinor: 0,
-      currency: 'RON',
-      durationMinutes: 30,
-      version: 1,
-      note: t('Pauză personală'),
-    },
-  ]
-}
-
-function AdminBookings({
-  config,
-  demo,
-}: {
-  config: PublicConfig
-  demo: boolean
-}) {
+function AdminBookings({ config }: { config: PublicConfig }) {
   const { locale, t } = useI18n()
   const [date, setDate] = useState(todayInTimeZone())
   const [entries, setEntries] = useState<CalendarEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
   const [manualOpen, setManualOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
   const [moveTarget, setMoveTarget] = useState<CalendarEntry | null>(null)
@@ -156,21 +102,13 @@ function AdminBookings({
     setLoading(true)
     setError('')
     try {
-      setEntries(
-        demo
-          ? demoEntries(
-              date,
-              config.services[0] ?? fallbackConfig.services[0],
-              t,
-            )
-          : await getAdminCalendar(date, date),
-      )
+      setEntries(await getAdminCalendar(date, date))
     } catch {
       setError(t('Calendarul nu a putut fi încărcat.'))
     } finally {
       setLoading(false)
     }
-  }, [config.services, date, demo, t])
+  }, [date, t])
 
   useEffect(() => {
     void loadEntries()
@@ -189,23 +127,19 @@ function AdminBookings({
   }, [date, manualOpen, selectedService, t])
 
   useEffect(() => {
-    if (!moveTarget || demo) return
+    if (!moveTarget) return
     setActionBusy(true)
     setMoveStart('')
     getRescheduleSlots(moveDate, moveTarget.id)
       .then(setMoveSlots)
       .catch(() => setError(t('Orele pentru mutare nu au putut fi încărcate.')))
       .finally(() => setActionBusy(false))
-  }, [demo, moveDate, moveTarget, t])
+  }, [moveDate, moveTarget, t])
 
   const updateStatus = async (
     booking: CalendarEntry,
     status: Booking['status'],
   ) => {
-    if (demo) {
-      setNotice(t('În modul demo modificările nu sunt salvate.'))
-      return
-    }
     setActionBusy(true)
     setError('')
     try {
@@ -226,15 +160,6 @@ function AdminBookings({
       !clientPhone.trim()
     ) {
       setError(t('Completează serviciul, ora, numele și telefonul.'))
-      return
-    }
-    if (demo) {
-      setManualOpen(false)
-      setNotice(
-        t(
-          'Formularul este funcțional; salvarea devine activă după conectarea bazei.',
-        ),
-      )
       return
     }
     setActionBusy(true)
@@ -264,11 +189,6 @@ function AdminBookings({
       setError(t('Ora de final trebuie să fie după ora de început.'))
       return
     }
-    if (demo) {
-      setBlockOpen(false)
-      setNotice(t('Blocarea se va salva după conectarea bazei.'))
-      return
-    }
     setActionBusy(true)
     try {
       await adminCreateBlock({
@@ -293,11 +213,6 @@ function AdminBookings({
 
   const moveBooking = async () => {
     if (!moveTarget || !moveStart) return
-    if (demo) {
-      setMoveTarget(null)
-      setNotice(t('Mutarea este disponibilă după conectarea bazei.'))
-      return
-    }
     setActionBusy(true)
     setError('')
     try {
@@ -373,7 +288,6 @@ function AdminBookings({
         </button>
       </div>
 
-      {notice ? <Notice tone="info">{notice}</Notice> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {loading ? (
@@ -612,11 +526,7 @@ function AdminBookings({
             value={moveDate}
             onChange={(event) => setMoveDate(event.target.value)}
           />
-          {demo ? (
-            <Notice tone="info">
-              {t('În modul demo, mutarea nu este salvată.')}
-            </Notice>
-          ) : actionBusy && !moveSlots.length ? (
+          {actionBusy && !moveSlots.length ? (
             <LoadingState label={t('Verificăm orele…')} />
           ) : moveSlots.length ? (
             <div className="slot-grid slot-grid--modal">
@@ -651,7 +561,7 @@ function AdminBookings({
             <Button
               type="button"
               busy={actionBusy}
-              disabled={!demo && !moveStart}
+              disabled={!moveStart}
               onClick={moveBooking}
             >
               {t('Confirmă mutarea')}
@@ -663,7 +573,7 @@ function AdminBookings({
   )
 }
 
-function AdminSchedule({ demo }: { demo: boolean }) {
+function AdminSchedule() {
   const { locale, t } = useI18n()
   const dayNames = useMemo(() => getDayNames(locale), [locale])
   const [windows, setWindows] = useState<WeeklyWindow[]>([])
@@ -713,10 +623,6 @@ function AdminSchedule({ demo }: { demo: boolean }) {
       setError(t('Fiecare interval trebuie să aibă finalul după început.'))
       return
     }
-    if (demo) {
-      setMessage(t('Programul este corect; în modul demo nu este salvat.'))
-      return
-    }
     setBusy(true)
     setError('')
     try {
@@ -732,10 +638,6 @@ function AdminSchedule({ demo }: { demo: boolean }) {
   const saveOverride = async () => {
     if (!overrideClosed && overrideStart >= overrideEnd) {
       setError(t('Intervalul special nu este valid.'))
-      return
-    }
-    if (demo) {
-      setMessage(t('Excepția este pregătită; în modul demo nu este salvată.'))
       return
     }
     setBusy(true)
@@ -890,13 +792,7 @@ function AdminSchedule({ demo }: { demo: boolean }) {
   )
 }
 
-function AdminSettings({
-  initialConfig,
-  demo,
-}: {
-  initialConfig: PublicConfig
-  demo: boolean
-}) {
+function AdminSettings({ initialConfig }: { initialConfig: PublicConfig }) {
   const { t } = useI18n()
   const [config, setConfig] = useState(initialConfig)
   const [services, setServices] = useState(initialConfig.services)
@@ -907,10 +803,6 @@ function AdminSettings({
   const saveProfile = async () => {
     if (!config.profile.name.trim() || !config.profile.addressLine.trim()) {
       setError(t('Numele și adresa sunt obligatorii.'))
-      return
-    }
-    if (demo) {
-      setMessage(t('Datele sunt valide; în modul demo nu sunt salvate.'))
       return
     }
     setBusy(true)
@@ -934,10 +826,6 @@ function AdminSettings({
       service.priceMinor < 0
     ) {
       setError(t('Verifică numele, durata și prețul serviciului.'))
-      return
-    }
-    if (demo) {
-      setMessage(t('Serviciul este valid; în modul demo nu este salvat.'))
       return
     }
     setBusy(true)
@@ -1305,24 +1193,15 @@ function AdminSettings({
 export default function AdminPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const [tab, setTab] = useState<AdminTab>('bookings')
   const [config, setConfig] = useState<PublicConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const demo = !isSupabaseConfigured && searchParams.get('demo') === '1'
+  const demo = isMockMode
 
   useEffect(() => {
     let alive = true
     const prepare = async () => {
-      if (!isSupabaseConfigured) {
-        if (!demo) {
-          navigate('/admin/login', { replace: true })
-          return
-        }
-        setConfig(fallbackConfig)
-        return
-      }
       const session = await getSession()
       if (!session || !(await isCurrentUserMaster())) {
         navigate('/admin/login', { replace: true })
@@ -1340,7 +1219,7 @@ export default function AdminPage() {
     return () => {
       alive = false
     }
-  }, [demo, navigate, t])
+  }, [navigate, t])
 
   const tabs = useMemo(
     () => [
@@ -1398,7 +1277,7 @@ export default function AdminPage() {
             <Notice tone="warning">
               <strong>{t('Mod demonstrativ.')}</strong>{' '}
               {t(
-                'Panoul este doar pentru previzualizare; datele nu sunt salvate.',
+                'Modificările sunt păstrate doar în această sesiune de test și dispar după reîncărcare.',
               )}
             </Notice>
           ) : null}
@@ -1407,11 +1286,11 @@ export default function AdminPage() {
           ) : error || !config ? (
             <Notice tone="error">{error || t('Configurația lipsește.')}</Notice>
           ) : tab === 'bookings' ? (
-            <AdminBookings config={config} demo={demo} />
+            <AdminBookings config={config} />
           ) : tab === 'schedule' ? (
-            <AdminSchedule demo={demo} />
+            <AdminSchedule />
           ) : (
-            <AdminSettings initialConfig={config} demo={demo} />
+            <AdminSettings initialConfig={config} />
           )}
         </main>
       </div>

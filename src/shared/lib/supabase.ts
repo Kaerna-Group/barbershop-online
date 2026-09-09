@@ -1,11 +1,17 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
-const supabaseKey =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
-  import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
+const mockModeRequested = import.meta.env.VITE_USE_MOCKS === 'true'
+const supabaseUrl = mockModeRequested
+  ? undefined
+  : import.meta.env.VITE_SUPABASE_URL?.trim()
+const supabaseKey = mockModeRequested
+  ? undefined
+  : import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
+const hasSupabaseCredentials = Boolean(supabaseUrl && supabaseKey)
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey)
+export const isMockMode = mockModeRequested || !hasSupabaseCredentials
+export const isSupabaseConfigured = hasSupabaseCredentials && !isMockMode
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseKey!, {

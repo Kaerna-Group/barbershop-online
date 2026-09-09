@@ -1,11 +1,13 @@
-import { ArrowLeft, ArrowRight, Eye, KeyRound } from 'lucide-react'
+import { ArrowLeft, ArrowRight, KeyRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   AppError,
   getSession,
   isCurrentUserMaster,
+  isMockMode,
   isSupabaseConfigured,
+  mockMasterCredentials,
   signInMaster,
 } from '../shared/api/barber-api'
 import { useI18n } from '../shared/i18n-context'
@@ -14,14 +16,19 @@ import { AppHeader, Button, Field, LoadingState, Notice } from '../shared/ui/ui'
 export default function AdminLoginPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState(
+    isMockMode ? mockMasterCredentials.email : '',
+  )
+  const [password, setPassword] = useState(
+    isMockMode ? mockMasterCredentials.password : '',
+  )
   const [busy, setBusy] = useState(false)
-  const [checking, setChecking] = useState(isSupabaseConfigured)
+  const loginAvailable = isSupabaseConfigured || isMockMode
+  const [checking, setChecking] = useState(loginAvailable)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return
+    if (!loginAvailable) return
     getSession()
       .then(async (session) => {
         if (session && (await isCurrentUserMaster()))
@@ -29,7 +36,7 @@ export default function AdminLoginPage() {
       })
       .catch(() => undefined)
       .finally(() => setChecking(false))
-  }, [navigate])
+  }, [loginAvailable, navigate])
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -72,10 +79,10 @@ export default function AdminLoginPage() {
               )}
             </p>
 
-            {!isSupabaseConfigured ? (
+            {isMockMode ? (
               <Notice tone="warning">
                 {t(
-                  'Autentificarea reală devine activă după configurarea Supabase. Poți vedea acum panoul în mod demonstrativ, fără modificări salvate.',
+                  'Intrare de test: folosește datele deja completate. Modificările dispar după reîncărcarea paginii.',
                 )}
               </Notice>
             ) : null}
@@ -87,7 +94,7 @@ export default function AdminLoginPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                disabled={busy || !isSupabaseConfigured}
+                disabled={busy || !loginAvailable}
               />
               <Field
                 label={t('Parolă')}
@@ -95,24 +102,18 @@ export default function AdminLoginPage() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                disabled={busy || !isSupabaseConfigured}
+                disabled={busy || !loginAvailable}
               />
               {error ? <Notice tone="error">{error}</Notice> : null}
               <Button
                 type="submit"
                 busy={busy}
-                disabled={!isSupabaseConfigured}
+                disabled={!loginAvailable}
                 icon={ArrowRight}
               >
                 {t('Intră în panou')}
               </Button>
             </form>
-
-            {!isSupabaseConfigured ? (
-              <Link className="button button--secondary" to="/admin?demo=1">
-                <Eye aria-hidden="true" /> <span>{t('Vezi panoul demo')}</span>
-              </Link>
-            ) : null}
 
             <Link className="admin-login-card__back" to="/">
               <ArrowLeft aria-hidden="true" /> {t('Înapoi la programare')}

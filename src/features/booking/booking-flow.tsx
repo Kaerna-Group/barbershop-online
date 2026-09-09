@@ -13,6 +13,7 @@ import {
   createBooking,
   getAvailableSlots,
   getSession,
+  mockOtpCode,
   requestPhoneCode,
   verifyPhoneCode,
 } from '../../shared/api/barber-api'
@@ -304,7 +305,8 @@ export function BookingFlow({ config }: BookingFlowProps) {
         <Notice tone="warning">
           <strong>{t('Mod demonstrativ.')}</strong>{' '}
           {t(
-            'Poți parcurge alegerea serviciului și a orei; confirmarea devine activă după conectarea Supabase.',
+            'Poți testa programarea completă cu orice număr valid și codul {code}. Datele dispar după reîncărcare.',
+            { code: mockOtpCode },
           )}
         </Notice>
       ) : null}

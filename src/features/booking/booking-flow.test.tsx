@@ -24,9 +24,10 @@ describe('BookingFlow', () => {
     ).toBeInTheDocument()
   })
 
-  it('explains that demo confirmation needs Supabase', () => {
+  it('shows the code for a complete mock booking', () => {
     render(<BookingFlow config={fallbackConfig} />)
     expect(screen.getByText(/Mod demonstrativ/i)).toBeInTheDocument()
+    expect(screen.getByText(/000000/i)).toBeInTheDocument()
   })
 
   it('switches the interface language to English', async () => {

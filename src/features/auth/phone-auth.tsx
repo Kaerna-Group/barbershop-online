@@ -3,6 +3,8 @@ import { useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import {
   AppError,
+  isMockMode,
+  mockOtpCode,
   requestPhoneCode,
   verifyPhoneCode,
 } from '../../shared/api/barber-api'
@@ -81,6 +83,14 @@ export function PhoneAuth({
           'Folosește același număr confirmat la programare. Nu ai nevoie de parolă sau email.',
         )}
       </p>
+
+      {isMockMode ? (
+        <Notice tone="info">
+          {t('Cod de test: {code}. Nu se trimite niciun SMS.', {
+            code: mockOtpCode,
+          })}
+        </Notice>
+      ) : null}
 
       <div className="auth-card__form">
         <Field

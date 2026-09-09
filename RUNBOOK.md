@@ -86,7 +86,9 @@ supabase functions deploy send-notifications
 - `VITE_SUPABASE_URL`;
 - `VITE_SUPABASE_PUBLISHABLE_KEY`.
 
-Push в `main` запускает проверки, сборку и публикацию. Без секретов публикуется безопасный demo-режим.
+Для проверки без реальных пользователей задайте repository variable `VITE_USE_MOCKS=true`. В этом режиме production-сборка не обращается к Supabase, а все временные изменения сбрасываются после перезагрузки.
+
+Перед реальным запуском смените её на `VITE_USE_MOCKS=false`. Push в `main` запускает проверки, сборку и публикацию.
 
 ## 7. Проверка перед запуском
 

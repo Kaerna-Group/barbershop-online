@@ -8,9 +8,11 @@ import {
   isSupabaseConfigured,
   signInMaster,
 } from '../shared/api/barber-api'
+import { useI18n } from '../shared/i18n-context'
 import { AppHeader, Button, Field, LoadingState, Notice } from '../shared/ui/ui'
 
 export default function AdminLoginPage() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,7 +34,7 @@ export default function AdminLoginPage() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!email.trim() || !password) {
-      setError('Completează emailul și parola.')
+      setError(t('Completează emailul și parola.'))
       return
     }
     setBusy(true)
@@ -43,8 +45,8 @@ export default function AdminLoginPage() {
     } catch (caught) {
       setError(
         caught instanceof AppError && caught.code === 'NOT_MASTER'
-          ? 'Contul este valid, dar nu este contul frizerului.'
-          : 'Datele de autentificare nu sunt corecte.',
+          ? t('Contul este valid, dar nu este contul frizerului.')
+          : t('Datele de autentificare nu sunt corecte.'),
       )
     } finally {
       setBusy(false)
@@ -56,30 +58,31 @@ export default function AdminLoginPage() {
       <AppHeader admin />
       <main className="admin-login-page">
         {checking ? (
-          <LoadingState label="Verificăm sesiunea…" />
+          <LoadingState label={t('Verificăm sesiunea…')} />
         ) : (
           <div className="admin-login-card">
             <span className="auth-card__icon">
               <KeyRound aria-hidden="true" />
             </span>
-            <p className="eyebrow">Acces privat</p>
-            <h1>Panoul frizerului</h1>
+            <p className="eyebrow">{t('Acces privat')}</p>
+            <h1>{t('Panoul frizerului')}</h1>
             <p>
-              Gestionează programările și orele de lucru. Accesul este permis
-              unui singur cont.
+              {t(
+                'Gestionează programările și orele de lucru. Accesul este permis unui singur cont.',
+              )}
             </p>
 
             {!isSupabaseConfigured ? (
               <Notice tone="warning">
-                Autentificarea reală devine activă după configurarea Supabase.
-                Poți vedea acum panoul în mod demonstrativ, fără modificări
-                salvate.
+                {t(
+                  'Autentificarea reală devine activă după configurarea Supabase. Poți vedea acum panoul în mod demonstrativ, fără modificări salvate.',
+                )}
               </Notice>
             ) : null}
 
             <form onSubmit={submit} className="admin-login-form">
               <Field
-                label="Email"
+                label={t('Email')}
                 type="email"
                 autoComplete="email"
                 value={email}
@@ -87,7 +90,7 @@ export default function AdminLoginPage() {
                 disabled={busy || !isSupabaseConfigured}
               />
               <Field
-                label="Parolă"
+                label={t('Parolă')}
                 type="password"
                 autoComplete="current-password"
                 value={password}
@@ -101,18 +104,18 @@ export default function AdminLoginPage() {
                 disabled={!isSupabaseConfigured}
                 icon={ArrowRight}
               >
-                Intră în panou
+                {t('Intră în panou')}
               </Button>
             </form>
 
             {!isSupabaseConfigured ? (
               <Link className="button button--secondary" to="/admin?demo=1">
-                <Eye aria-hidden="true" /> <span>Vezi panoul demo</span>
+                <Eye aria-hidden="true" /> <span>{t('Vezi panoul demo')}</span>
               </Link>
             ) : null}
 
             <Link className="admin-login-card__back" to="/">
-              <ArrowLeft aria-hidden="true" /> Înapoi la programare
+              <ArrowLeft aria-hidden="true" /> {t('Înapoi la programare')}
             </Link>
           </div>
         )}

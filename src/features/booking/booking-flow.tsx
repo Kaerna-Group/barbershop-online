@@ -24,6 +24,7 @@ import {
   getBookableDates,
   todayInTimeZone,
 } from '../../shared/lib/format'
+import { useI18n, type Translate } from '../../shared/i18n-context'
 import type { Booking, PublicConfig, TimeSlot } from '../../shared/model/types'
 import {
   Button,
@@ -37,22 +38,24 @@ type BookingFlowProps = {
   config: PublicConfig
 }
 
-function dateParts(date: string) {
+function dateParts(date: string, locale: string) {
   const value = new Date(`${date}T12:00:00`)
   return {
-    weekday: new Intl.DateTimeFormat('ro-RO', { weekday: 'short' })
+    weekday: new Intl.DateTimeFormat(locale, { weekday: 'short' })
       .format(value)
       .replace('.', ''),
-    day: new Intl.DateTimeFormat('ro-RO', { day: '2-digit' }).format(value),
-    month: new Intl.DateTimeFormat('ro-RO', { month: 'short' })
+    day: new Intl.DateTimeFormat(locale, { day: '2-digit' }).format(value),
+    month: new Intl.DateTimeFormat(locale, { month: 'short' })
       .format(value)
       .replace('.', ''),
   }
 }
 
-function readableError(error: unknown) {
+function readableError(error: unknown, t: Translate) {
   if (error instanceof Error && error.message === 'SUPABASE_NOT_CONFIGURED') {
-    return 'Programarea este în modul demonstrativ. Conectează Supabase pentru confirmări reale.'
+    return t(
+      'Programarea este în modul demonstrativ. Conectează Supabase pentru confirmări reale.',
+    )
   }
   if (error instanceof AppError) {
     const messages: Record<string, string> = {
@@ -65,15 +68,16 @@ function readableError(error: unknown) {
       BOOKING_LIMIT: 'Ai deja numărul maxim de programări viitoare.',
       PHONE_REQUIRED: 'Confirmă numărul de telefon pentru a continua.',
     }
-    return (
+    return t(
       messages[error.code] ??
-      'Nu am putut finaliza cererea. Verifică datele și încearcă din nou.'
+        'Nu am putut finaliza cererea. Verifică datele și încearcă din nou.',
     )
   }
-  return 'A apărut o problemă temporară. Încearcă din nou.'
+  return t('A apărut o problemă temporară. Încearcă din nou.')
 }
 
 export function BookingFlow({ config }: BookingFlowProps) {
+  const { locale, t } = useI18n()
   const dates = useMemo(
     () => getBookableDates(7, config.settings.timezone),
     [config.settings.timezone],
@@ -134,7 +138,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
         if (alive) setSlots(result)
       })
       .catch((caught) => {
-        if (alive) setError(readableError(caught))
+        if (alive) setError(readableError(caught, t))
       })
       .finally(() => {
         if (alive) setLoadingSlots(false)
@@ -142,7 +146,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
     return () => {
       alive = false
     }
-  }, [date, service, step])
+  }, [date, service, step, t])
 
   const goBack = () => {
     setError('')
@@ -155,7 +159,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
     const normalized = phone.replace(/[\s()-]/g, '')
     if (!/^\+?[1-9]\d{7,14}$/.test(normalized)) {
       setError(
-        'Scrie numărul complet, inclusiv prefixul de țară, de exemplu +40.',
+        t('Scrie numărul complet, inclusiv prefixul de țară, de exemplu +40.'),
       )
       return
     }
@@ -166,7 +170,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
       setPhone(normalized)
       setCodeSent(true)
     } catch (caught) {
-      setError(readableError(caught))
+      setError(readableError(caught, t))
     } finally {
       setBusy(false)
     }
@@ -174,7 +178,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
 
   const saveBooking = async () => {
     if (!service || !selectedSlot || name.trim().length < 2) {
-      setError('Completează numele și păstrează ora selectată.')
+      setError(t('Completează numele și păstrează ora selectată.'))
       return
     }
     setBusy(true)
@@ -188,7 +192,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
       })
       setCompleted(result)
     } catch (caught) {
-      setError(readableError(caught))
+      setError(readableError(caught, t))
       if (caught instanceof AppError && caught.code === 'SLOT_TAKEN') {
         setStep(3)
         setSlots(await getAvailableSlots(date, service))
@@ -200,7 +204,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
 
   const verifyAndSave = async () => {
     if (!/^\d{6}$/.test(otp)) {
-      setError('Codul conține 6 cifre.')
+      setError(t('Codul conține 6 cifre.'))
       return
     }
     setBusy(true)
@@ -210,7 +214,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
       setVerifiedPhone(session?.user.phone ?? phone)
       await saveBooking()
     } catch (caught) {
-      setError(readableError(caught))
+      setError(readableError(caught, t))
       setBusy(false)
     }
   }
@@ -221,34 +225,41 @@ export function BookingFlow({ config }: BookingFlowProps) {
         <span className="booking-success__icon">
           <Check aria-hidden="true" />
         </span>
-        <p className="eyebrow">Programare confirmată</p>
+        <p className="eyebrow">{t('Programare confirmată')}</p>
         <h2>
-          Ne vedem{' '}
-          {formatLongDate(completed.startsAt, config.settings.timezone)}.
+          {t('Ne vedem {date}.', {
+            date: formatLongDate(
+              completed.startsAt,
+              config.settings.timezone,
+              locale,
+            ),
+          })}
         </h2>
         <div className="summary-card">
           <div>
-            <span>Ora</span>
+            <span>{t('Ora')}</span>
             <strong>
-              {formatTime(completed.startsAt, config.settings.timezone)}
+              {formatTime(completed.startsAt, config.settings.timezone, locale)}
             </strong>
           </div>
           <div>
-            <span>Serviciu</span>
+            <span>{t('Serviciu')}</span>
             <strong>{completed.serviceName}</strong>
           </div>
           <div>
-            <span>Preț</span>
+            <span>{t('Preț')}</span>
             <strong>
-              {formatMoney(completed.priceMinor, completed.currency)}
+              {formatMoney(completed.priceMinor, completed.currency, locale)}
             </strong>
           </div>
         </div>
         <p className="muted">
-          Confirmarea este trimisă la {verifiedPhone ?? phone}.
+          {t('Confirmarea este trimisă la {phone}.', {
+            phone: verifiedPhone ?? phone,
+          })}
         </p>
         <Link className="button button--primary" to="/my-bookings">
-          <span>Vezi vizitele mele</span>
+          <span>{t('Vezi vizitele mele')}</span>
           <ArrowRight aria-hidden="true" />
         </Link>
       </div>
@@ -258,8 +269,9 @@ export function BookingFlow({ config }: BookingFlowProps) {
   if (!service) {
     return (
       <Notice tone="warning">
-        Nu există încă servicii active. Frizerul trebuie să adauge cel puțin
-        unul în setări.
+        {t(
+          'Nu există încă servicii active. Frizerul trebuie să adauge cel puțin unul în setări.',
+        )}
       </Notice>
     )
   }
@@ -269,8 +281,8 @@ export function BookingFlow({ config }: BookingFlowProps) {
       <div className="inline-empty">
         <CalendarDays aria-hidden="true" />
         <div>
-          <strong>Programările online sunt oprite temporar.</strong>
-          <span>Revino mai târziu sau contactează frizerul direct.</span>
+          <strong>{t('Programările online sunt oprite temporar.')}</strong>
+          <span>{t('Revino mai târziu sau contactează frizerul direct.')}</span>
         </div>
       </div>
     )
@@ -280,18 +292,20 @@ export function BookingFlow({ config }: BookingFlowProps) {
     <div className="booking-flow">
       <div className="booking-flow__top">
         <div>
-          <p className="eyebrow">Rezervă online</p>
-          <h2>Alege timpul potrivit.</h2>
+          <p className="eyebrow">{t('Rezervă online')}</p>
+          <h2>{t('Alege timpul potrivit.')}</h2>
         </div>
         <p className="booking-flow__timezone">
-          <Clock3 aria-hidden="true" /> Ora României
+          <Clock3 aria-hidden="true" /> {t('Ora României')}
         </p>
       </div>
 
       {config.demo ? (
         <Notice tone="warning">
-          <strong>Mod demonstrativ.</strong> Poți parcurge alegerea serviciului
-          și a orei; confirmarea devine activă după conectarea Supabase.
+          <strong>{t('Mod demonstrativ.')}</strong>{' '}
+          {t(
+            'Poți parcurge alegerea serviciului și a orei; confirmarea devine activă după conectarea Supabase.',
+          )}
         </Notice>
       ) : null}
 
@@ -303,14 +317,14 @@ export function BookingFlow({ config }: BookingFlowProps) {
             <div className="stage-heading">
               <span>01</span>
               <div>
-                <h3>Ce alegi?</h3>
-                <p>Durata este rezervată integral pentru tine.</p>
+                <h3>{t('Ce alegi?')}</h3>
+                <p>{t('Durata este rezervată integral pentru tine.')}</p>
               </div>
             </div>
             <div
               className="service-list"
               role="radiogroup"
-              aria-label="Serviciu"
+              aria-label={t('Serviciu')}
             >
               {config.services.map((item) => (
                 <label
@@ -333,7 +347,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
                   </span>
                   <span className="service-option__meta">
                     <strong>
-                      {formatMoney(item.priceMinor, item.currency)}
+                      {formatMoney(item.priceMinor, item.currency, locale)}
                     </strong>
                     <small>{item.durationMinutes} min</small>
                   </span>
@@ -348,20 +362,21 @@ export function BookingFlow({ config }: BookingFlowProps) {
             <div className="stage-heading">
               <span>02</span>
               <div>
-                <h3>În ce zi?</h3>
+                <h3>{t('În ce zi?')}</h3>
                 <p>
-                  Poți rezerva cu până la {config.settings.bookingHorizonDays}{' '}
-                  de zile înainte.
+                  {t('Poți rezerva cu până la {days} de zile înainte.', {
+                    days: config.settings.bookingHorizonDays,
+                  })}
                 </p>
               </div>
             </div>
             <div
               className="date-grid"
               role="radiogroup"
-              aria-label="Data programării"
+              aria-label={t('Data programării')}
             >
               {dates.map((item) => {
-                const parts = dateParts(item)
+                const parts = dateParts(item, locale)
                 return (
                   <label
                     className={`date-option ${date === item ? 'is-selected' : ''}`}
@@ -383,7 +398,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
             </div>
             <Field
               className="date-picker"
-              label="Altă dată"
+              label={t('Altă dată')}
               type="date"
               min={dates[0]}
               max={maxDate}
@@ -398,19 +413,23 @@ export function BookingFlow({ config }: BookingFlowProps) {
             <div className="stage-heading">
               <span>03</span>
               <div>
-                <h3>La ce oră?</h3>
+                <h3>{t('La ce oră?')}</h3>
                 <p>
-                  {formatLongDate(`${date}T12:00:00`, config.settings.timezone)}
+                  {formatLongDate(
+                    `${date}T12:00:00`,
+                    config.settings.timezone,
+                    locale,
+                  )}
                 </p>
               </div>
             </div>
             {loadingSlots ? (
-              <LoadingState label="Verificăm orele libere…" />
+              <LoadingState label={t('Verificăm orele libere…')} />
             ) : slots.length ? (
               <div
                 className="slot-grid"
                 role="radiogroup"
-                aria-label="Ora programării"
+                aria-label={t('Ora programării')}
               >
                 {slots.map((slot) => (
                   <label
@@ -424,7 +443,11 @@ export function BookingFlow({ config }: BookingFlowProps) {
                       checked={startsAt === slot.startsAt}
                       onChange={() => setStartsAt(slot.startsAt)}
                     />
-                    {formatTime(slot.startsAt, config.settings.timezone)}
+                    {formatTime(
+                      slot.startsAt,
+                      config.settings.timezone,
+                      locale,
+                    )}
                   </label>
                 ))}
               </div>
@@ -432,15 +455,15 @@ export function BookingFlow({ config }: BookingFlowProps) {
               <div className="inline-empty">
                 <CalendarDays aria-hidden="true" />
                 <div>
-                  <strong>Nicio oră liberă în această zi.</strong>
-                  <span>Alege o altă dată pentru a continua.</span>
+                  <strong>{t('Nicio oră liberă în această zi.')}</strong>
+                  <span>{t('Alege o altă dată pentru a continua.')}</span>
                 </div>
                 <Button
                   variant="secondary"
                   type="button"
                   onClick={() => setStep(2)}
                 >
-                  Schimbă data
+                  {t('Schimbă data')}
                 </Button>
               </div>
             )}
@@ -452,9 +475,11 @@ export function BookingFlow({ config }: BookingFlowProps) {
             <div className="stage-heading">
               <span>04</span>
               <div>
-                <h3>Confirmă programarea.</h3>
+                <h3>{t('Confirmă programarea.')}</h3>
                 <p>
-                  Numărul este folosit pentru cod și notificări despre vizită.
+                  {t(
+                    'Numărul este folosit pentru cod și notificări despre vizită.',
+                  )}
                 </p>
               </div>
             </div>
@@ -462,30 +487,30 @@ export function BookingFlow({ config }: BookingFlowProps) {
             <div className="booking-confirm-layout">
               <div className="booking-form">
                 <Field
-                  label="Numele tău"
+                  label={t('Numele tău')}
                   autoComplete="name"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="Cum să te trecem în programare"
+                  placeholder={t('Cum să te trecem în programare')}
                   disabled={busy}
                 />
 
                 {!verifiedPhone ? (
                   <>
                     <Field
-                      label="Telefon"
+                      label={t('Telefon')}
                       autoComplete="tel"
                       inputMode="tel"
                       value={phone}
                       onChange={(event) => setPhone(event.target.value)}
                       placeholder="+40 7xx xxx xxx"
                       disabled={busy || codeSent}
-                      hint="Include prefixul de țară."
+                      hint={t('Include prefixul de țară.')}
                     />
                     {codeSent ? (
                       <div className="otp-row">
                         <Field
-                          label="Codul SMS"
+                          label={t('Codul SMS')}
                           autoComplete="one-time-code"
                           inputMode="numeric"
                           maxLength={6}
@@ -504,46 +529,59 @@ export function BookingFlow({ config }: BookingFlowProps) {
                             setOtp('')
                           }}
                         >
-                          Schimbă numărul
+                          {t('Schimbă numărul')}
                         </button>
                       </div>
                     ) : null}
                   </>
                 ) : (
                   <Notice tone="success">
-                    <strong>Telefon confirmat:</strong> {verifiedPhone}
+                    <strong>{t('Telefon confirmat:')}</strong> {verifiedPhone}
                   </Notice>
                 )}
               </div>
 
               <aside className="summary-card summary-card--vertical">
                 <div>
-                  <span>Serviciu</span>
+                  <span>{t('Serviciu')}</span>
                   <strong>{service.name}</strong>
                   <small>{service.durationMinutes} min</small>
                 </div>
                 <div>
-                  <span>Data și ora</span>
+                  <span>{t('Data și ora')}</span>
                   <strong>
-                    {selectedSlot ? formatLongDate(selectedSlot.startsAt) : '—'}
+                    {selectedSlot
+                      ? formatLongDate(
+                          selectedSlot.startsAt,
+                          config.settings.timezone,
+                          locale,
+                        )
+                      : '—'}
                   </strong>
                   <small>
-                    {selectedSlot ? formatTime(selectedSlot.startsAt) : ''}
+                    {selectedSlot
+                      ? formatTime(
+                          selectedSlot.startsAt,
+                          config.settings.timezone,
+                          locale,
+                        )
+                      : ''}
                   </small>
                 </div>
                 <div>
-                  <span>Total la locație</span>
+                  <span>{t('Total la locație')}</span>
                   <strong>
-                    {formatMoney(service.priceMinor, service.currency)}
+                    {formatMoney(service.priceMinor, service.currency, locale)}
                   </strong>
-                  <small>Fără plată online</small>
+                  <small>{t('Fără plată online')}</small>
                 </div>
               </aside>
             </div>
 
             <p className="consent-copy">
-              Continuând, accepți regulile de programare și folosirea datelor
-              doar pentru gestionarea vizitei.
+              {t(
+                'Continuând, accepți regulile de programare și folosirea datelor doar pentru gestionarea vizitei.',
+              )}
             </p>
           </div>
         ) : null}
@@ -560,7 +598,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
             disabled={busy}
             icon={ArrowLeft}
           >
-            Înapoi
+            {t('Înapoi')}
           </Button>
         ) : (
           <span />
@@ -573,11 +611,11 @@ export function BookingFlow({ config }: BookingFlowProps) {
             disabled={(step === 1 && !serviceId) || (step === 3 && !startsAt)}
             icon={ArrowRight}
           >
-            Continuă
+            {t('Continuă')}
           </Button>
         ) : !authKnown ? (
           <Button busy disabled>
-            Verificare sesiune
+            {t('Verificare sesiune')}
           </Button>
         ) : verifiedPhone ? (
           <Button
@@ -586,7 +624,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
             onClick={saveBooking}
             icon={ShieldCheck}
           >
-            Confirmă programarea
+            {t('Confirmă programarea')}
           </Button>
         ) : codeSent ? (
           <Button
@@ -595,7 +633,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
             onClick={verifyAndSave}
             icon={ShieldCheck}
           >
-            Verifică și confirmă
+            {t('Verifică și confirmă')}
           </Button>
         ) : (
           <Button
@@ -604,7 +642,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
             onClick={sendCode}
             icon={ArrowRight}
           >
-            Trimite codul
+            {t('Trimite codul')}
           </Button>
         )}
       </div>

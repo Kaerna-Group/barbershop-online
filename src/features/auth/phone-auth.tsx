@@ -6,6 +6,7 @@ import {
   requestPhoneCode,
   verifyPhoneCode,
 } from '../../shared/api/barber-api'
+import { useI18n } from '../../shared/i18n-context'
 import { Button, Field, Notice } from '../../shared/ui/ui'
 
 export function PhoneAuth({
@@ -13,6 +14,7 @@ export function PhoneAuth({
 }: {
   onAuthenticated: (session: Session) => void
 }) {
+  const { t } = useI18n()
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
   const [sent, setSent] = useState(false)
@@ -22,7 +24,7 @@ export function PhoneAuth({
   const send = async () => {
     const normalized = phone.replace(/[\s()-]/g, '')
     if (!/^\+?[1-9]\d{7,14}$/.test(normalized)) {
-      setError('Scrie numărul complet, cu prefixul de țară.')
+      setError(t('Scrie numărul complet, cu prefixul de țară.'))
       return
     }
     setBusy(true)
@@ -37,8 +39,12 @@ export function PhoneAuth({
           caught.code === 'SUPABASE_NOT_CONFIGURED') ||
           (caught instanceof Error &&
             caught.message === 'SUPABASE_NOT_CONFIGURED')
-          ? 'Autentificarea devine activă după conectarea proiectului Supabase.'
-          : 'Codul nu a putut fi trimis. Încearcă din nou peste câteva momente.',
+          ? t(
+              'Autentificarea devine activă după conectarea proiectului Supabase.',
+            )
+          : t(
+              'Codul nu a putut fi trimis. Încearcă din nou peste câteva momente.',
+            ),
       )
     } finally {
       setBusy(false)
@@ -47,7 +53,7 @@ export function PhoneAuth({
 
   const verify = async () => {
     if (!/^\d{6}$/.test(code)) {
-      setError('Codul conține 6 cifre.')
+      setError(t('Codul conține 6 cifre.'))
       return
     }
     setBusy(true)
@@ -57,7 +63,7 @@ export function PhoneAuth({
       if (!session) throw new Error('No session')
       onAuthenticated(session)
     } catch {
-      setError('Codul nu este valid sau a expirat. Cere un cod nou.')
+      setError(t('Codul nu este valid sau a expirat. Cere un cod nou.'))
     } finally {
       setBusy(false)
     }
@@ -68,16 +74,17 @@ export function PhoneAuth({
       <span className="auth-card__icon">
         <LockKeyhole aria-hidden="true" />
       </span>
-      <p className="eyebrow">Acces securizat</p>
-      <h1>Vizitele tale, într-un singur loc.</h1>
+      <p className="eyebrow">{t('Acces securizat')}</p>
+      <h1>{t('Vizitele tale, într-un singur loc.')}</h1>
       <p className="auth-card__intro">
-        Folosește același număr confirmat la programare. Nu ai nevoie de parolă
-        sau email.
+        {t(
+          'Folosește același număr confirmat la programare. Nu ai nevoie de parolă sau email.',
+        )}
       </p>
 
       <div className="auth-card__form">
         <Field
-          label="Număr de telefon"
+          label={t('Număr de telefon')}
           autoComplete="tel"
           inputMode="tel"
           placeholder="+40 7xx xxx xxx"
@@ -87,7 +94,7 @@ export function PhoneAuth({
         />
         {sent ? (
           <Field
-            label="Cod SMS"
+            label={t('Cod SMS')}
             autoComplete="one-time-code"
             inputMode="numeric"
             maxLength={6}
@@ -108,7 +115,7 @@ export function PhoneAuth({
               onClick={verify}
               icon={ArrowRight}
             >
-              Intră în cont
+              {t('Intră în cont')}
             </Button>
             <button
               className="text-button"
@@ -119,12 +126,12 @@ export function PhoneAuth({
                 setError('')
               }}
             >
-              Schimbă numărul
+              {t('Schimbă numărul')}
             </button>
           </>
         ) : (
           <Button type="button" busy={busy} onClick={send} icon={ArrowRight}>
-            Trimite codul
+            {t('Trimite codul')}
           </Button>
         )}
       </div>

@@ -1,5 +1,6 @@
 import {
   LoaderCircle,
+  Languages,
   Scissors,
   TriangleAlert,
   X,
@@ -14,6 +15,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink } from 'react-router-dom'
+import { useI18n, type Language } from '../i18n-context'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
@@ -108,10 +110,11 @@ export function Notice({
 }
 
 export function LoadingState({ label = 'Se încarcă…' }: { label?: string }) {
+  const { t } = useI18n()
   return (
     <div className="loading-state" role="status">
       <LoaderCircle className="spin" aria-hidden="true" />
-      <span>{label}</span>
+      <span>{t(label)}</span>
     </div>
   )
 }
@@ -146,6 +149,7 @@ export function Modal({
   children: ReactNode
   onClose: () => void
 }) {
+  const { t } = useI18n()
   useEffect(() => {
     if (!open) return
     const previous = document.body.style.overflow
@@ -168,7 +172,7 @@ export function Modal({
         className="modal__backdrop"
         type="button"
         onClick={onClose}
-        aria-label="Închide"
+        aria-label={t('Închide')}
       />
       <div className="modal__card">
         <div className="modal__header">
@@ -177,7 +181,7 @@ export function Modal({
             className="icon-button"
             type="button"
             onClick={onClose}
-            aria-label="Închide"
+            aria-label={t('Închide')}
           >
             <X aria-hidden="true" />
           </button>
@@ -190,34 +194,48 @@ export function Modal({
 }
 
 export function AppHeader({ admin = false }: { admin?: boolean }) {
+  const { language, setLanguage, t } = useI18n()
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link className="brand" to="/" aria-label="Pagina principală">
+        <Link className="brand" to="/" aria-label={t('Pagina principală')}>
           <span className="brand__mark">
             <Scissors aria-hidden="true" />
           </span>
           <span>
-            <strong>PROGRAMARE</strong>
-            <small>la frizer</small>
+            <strong>{t('PROGRAMARE')}</strong>
+            <small>{t('la frizer')}</small>
           </span>
         </Link>
 
-        <nav className="site-nav" aria-label="Navigare principală">
+        <nav className="site-nav" aria-label={t('Navigare principală')}>
           {admin ? (
             <NavLink to="/" className="nav-link">
-              Site public
+              {t('Site public')}
             </NavLink>
           ) : (
             <>
               <a className="nav-link nav-link--desktop" href="#programare">
-                Programare
+                {t('Programare')}
               </a>
               <NavLink className="nav-link" to="/my-bookings">
-                Vizitele mele
+                {t('Vizitele mele')}
               </NavLink>
             </>
           )}
+          <label className="language-switcher">
+            <Languages aria-hidden="true" />
+            <span className="sr-only">{t('Limba interfeței')}</span>
+            <select
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as Language)}
+              aria-label={t('Limba interfeței')}
+            >
+              <option value="ro">RO</option>
+              <option value="en">EN</option>
+              <option value="ru">RU</option>
+            </select>
+          </label>
         </nav>
       </div>
     </header>
@@ -225,9 +243,12 @@ export function AppHeader({ admin = false }: { admin?: boolean }) {
 }
 
 export function StepIndicator({ current }: { current: number }) {
-  const labels = ['Serviciu', 'Data', 'Ora', 'Confirmare']
+  const { t } = useI18n()
+  const labels = ['Serviciu', 'Data', 'Ora', 'Confirmare'].map((label) =>
+    t(label),
+  )
   return (
-    <ol className="steps" aria-label="Pașii programării">
+    <ol className="steps" aria-label={t('Pașii programării')}>
       {labels.map((label, index) => {
         const step = index + 1
         return (

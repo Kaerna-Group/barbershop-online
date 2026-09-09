@@ -30,6 +30,7 @@ import {
   statusLabel,
   todayInTimeZone,
 } from '../shared/lib/format'
+import { useI18n } from '../shared/i18n-context'
 import type { Booking, PublicConfig, TimeSlot } from '../shared/model/types'
 import {
   AppHeader,
@@ -53,6 +54,7 @@ function BookingCard({
   onCancel: (booking: Booking) => void
   onReschedule: (booking: Booking) => void
 }) {
+  const { locale, t } = useI18n()
   const canChange =
     booking.status === 'confirmed' &&
     new Date(booking.startsAt).getTime() - Date.now() >=
@@ -62,14 +64,16 @@ function BookingCard({
     <article className="booking-card">
       <div className="booking-card__date">
         <strong>
-          {new Intl.DateTimeFormat('ro-RO', { day: '2-digit' }).format(
-            new Date(booking.startsAt),
-          )}
+          {new Intl.DateTimeFormat(locale, {
+            day: '2-digit',
+            timeZone: config.settings.timezone,
+          }).format(new Date(booking.startsAt))}
         </strong>
         <span>
-          {new Intl.DateTimeFormat('ro-RO', { month: 'short' }).format(
-            new Date(booking.startsAt),
-          )}
+          {new Intl.DateTimeFormat(locale, {
+            month: 'short',
+            timeZone: config.settings.timezone,
+          }).format(new Date(booking.startsAt))}
         </span>
       </div>
       <div className="booking-card__body">
@@ -78,19 +82,21 @@ function BookingCard({
             <h3>{booking.serviceName}</h3>
             <p>
               <Clock3 aria-hidden="true" />{' '}
-              {formatTime(booking.startsAt, config.settings.timezone)} ·{' '}
+              {formatTime(booking.startsAt, config.settings.timezone, locale)} ·{' '}
               {booking.durationMinutes} min
             </p>
           </div>
           <span className={`status-pill status-pill--${booking.status}`}>
-            {statusLabel(booking.status)}
+            {t(statusLabel(booking.status))}
           </span>
         </div>
         <div className="booking-card__details">
           <span>
             <MapPin aria-hidden="true" /> {config.profile.addressLine}
           </span>
-          <strong>{formatMoney(booking.priceMinor, booking.currency)}</strong>
+          <strong>
+            {formatMoney(booking.priceMinor, booking.currency, locale)}
+          </strong>
         </div>
         {booking.status === 'confirmed' ? (
           canChange ? (
@@ -100,7 +106,7 @@ function BookingCard({
                 type="button"
                 onClick={() => onReschedule(booking)}
               >
-                Mută vizita
+                {t('Mută vizita')}
               </Button>
               <Button
                 variant="ghost"
@@ -108,13 +114,14 @@ function BookingCard({
                 onClick={() => onCancel(booking)}
                 icon={XCircle}
               >
-                Anulează
+                {t('Anulează')}
               </Button>
             </div>
           ) : (
             <p className="booking-card__cutoff">
-              Modificările online s-au închis. Contactează frizerul direct dacă
-              nu mai poți ajunge.
+              {t(
+                'Modificările online s-au închis. Contactează frizerul direct dacă nu mai poți ajunge.',
+              )}
             </p>
           )
         ) : null}
@@ -124,6 +131,7 @@ function BookingCard({
 }
 
 export default function MyBookingsPage() {
+  const { locale, t } = useI18n()
   const [session, setSession] = useState<Session | null>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
   const [config, setConfig] = useState<PublicConfig | null>(null)
@@ -148,11 +156,11 @@ export default function MyBookingsPage() {
       const result = await getMyBookings()
       setBookings(result)
     } catch {
-      setError('Nu am putut încărca vizitele. Încearcă din nou.')
+      setError(t('Nu am putut încărca vizitele. Încearcă din nou.'))
     } finally {
       setLoading(false)
     }
-  }, [session])
+  }, [session, t])
 
   useEffect(() => {
     let alive = true
@@ -162,7 +170,7 @@ export default function MyBookingsPage() {
         setSession(currentSession)
         setConfig(publicConfig)
       })
-      .catch(() => setError('Serviciul nu este disponibil momentan.'))
+      .catch(() => setError(t('Serviciul nu este disponibil momentan.')))
       .finally(() => {
         if (alive) setSessionLoading(false)
       })
@@ -171,7 +179,7 @@ export default function MyBookingsPage() {
       alive = false
       unsubscribe()
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     void load()
@@ -187,7 +195,7 @@ export default function MyBookingsPage() {
         if (alive) setRescheduleSlots(result)
       })
       .catch(() => {
-        if (alive) setError('Nu am putut încărca orele pentru mutare.')
+        if (alive) setError(t('Nu am putut încărca orele pentru mutare.'))
       })
       .finally(() => {
         if (alive) setActionBusy(false)
@@ -195,7 +203,7 @@ export default function MyBookingsPage() {
     return () => {
       alive = false
     }
-  }, [config, rescheduleDate, rescheduleTarget])
+  }, [config, rescheduleDate, rescheduleTarget, t])
 
   const upcoming = useMemo(
     () =>
@@ -230,7 +238,9 @@ export default function MyBookingsPage() {
       await load()
     } catch {
       setError(
-        'Vizita nu a putut fi anulată. Este posibil să fi fost modificată între timp.',
+        t(
+          'Vizita nu a putut fi anulată. Este posibil să fi fost modificată între timp.',
+        ),
       )
     } finally {
       setActionBusy(false)
@@ -252,7 +262,7 @@ export default function MyBookingsPage() {
       await load()
     } catch {
       setError(
-        'Ora nu mai este disponibilă. Vizita inițială a rămas neschimbată.',
+        t('Ora nu mai este disponibilă. Vizita inițială a rămas neschimbată.'),
       )
     } finally {
       setActionBusy(false)
@@ -264,16 +274,17 @@ export default function MyBookingsPage() {
       <AppHeader />
       <main className="account-page">
         {sessionLoading || !config ? (
-          <LoadingState label="Verificăm accesul…" />
+          <LoadingState label={t('Verificăm accesul…')} />
         ) : !isSupabaseConfigured ? (
           <div className="account-page__auth">
             <Notice tone="warning">
-              Contul de client devine activ după conectarea proiectului
-              Supabase. Programarea publică poate fi previzualizată pe pagina
-              principală.
+              {t(
+                'Contul de client devine activ după conectarea proiectului Supabase. Programarea publică poate fi previzualizată pe pagina principală.',
+              )}
             </Notice>
             <Link className="button button--primary" to="/">
-              <ArrowLeft aria-hidden="true" /> <span>Înapoi la programare</span>
+              <ArrowLeft aria-hidden="true" />{' '}
+              <span>{t('Înapoi la programare')}</span>
             </Link>
           </div>
         ) : !session ? (
@@ -282,8 +293,8 @@ export default function MyBookingsPage() {
           <div className="account-content">
             <div className="account-heading">
               <div>
-                <SectionLabel>Contul meu</SectionLabel>
-                <h1>Vizitele mele</h1>
+                <SectionLabel>{t('Contul meu')}</SectionLabel>
+                <h1>{t('Vizitele mele')}</h1>
                 <p>{session.user.phone}</p>
               </div>
               <Button
@@ -292,14 +303,14 @@ export default function MyBookingsPage() {
                 icon={LogOut}
                 onClick={() => void signOut()}
               >
-                Ieși
+                {t('Ieși')}
               </Button>
             </div>
 
             <div
               className="account-tabs"
               role="tablist"
-              aria-label="Tipul vizitelor"
+              aria-label={t('Tipul vizitelor')}
             >
               <button
                 className={tab === 'upcoming' ? 'is-active' : ''}
@@ -308,7 +319,7 @@ export default function MyBookingsPage() {
                 aria-selected={tab === 'upcoming'}
                 onClick={() => setTab('upcoming')}
               >
-                Următoarele <span>{upcoming.length}</span>
+                {t('Următoarele')} <span>{upcoming.length}</span>
               </button>
               <button
                 className={tab === 'history' ? 'is-active' : ''}
@@ -317,13 +328,13 @@ export default function MyBookingsPage() {
                 aria-selected={tab === 'history'}
                 onClick={() => setTab('history')}
               >
-                Istoric <span>{history.length}</span>
+                {t('Istoric')} <span>{history.length}</span>
               </button>
             </div>
 
             {error ? <Notice tone="error">{error}</Notice> : null}
             {loading ? (
-              <LoadingState label="Încărcăm vizitele…" />
+              <LoadingState label={t('Încărcăm vizitele…')} />
             ) : (tab === 'upcoming' ? upcoming : history).length ? (
               <div className="booking-list">
                 {(tab === 'upcoming' ? upcoming : history).map((booking) => (
@@ -345,19 +356,21 @@ export default function MyBookingsPage() {
               <EmptyState
                 title={
                   tab === 'upcoming'
-                    ? 'Nu ai vizite viitoare.'
-                    : 'Istoricul este gol.'
+                    ? t('Nu ai vizite viitoare.')
+                    : t('Istoricul este gol.')
                 }
                 text={
                   tab === 'upcoming'
-                    ? 'Alege serviciul și o oră liberă — durează doar câteva minute.'
-                    : 'Vizitele finalizate și anulate vor apărea aici.'
+                    ? t(
+                        'Alege serviciul și o oră liberă — durează doar câteva minute.',
+                      )
+                    : t('Vizitele finalizate și anulate vor apărea aici.')
                 }
                 action={
                   tab === 'upcoming' ? (
                     <Link className="button button--primary" to="/">
                       <Scissors aria-hidden="true" />{' '}
-                      <span>Fă o programare</span>
+                      <span>{t('Fă o programare')}</span>
                     </Link>
                   ) : undefined
                 }
@@ -369,18 +382,28 @@ export default function MyBookingsPage() {
 
       <Modal
         open={Boolean(cancelTarget)}
-        title="Anulezi această vizită?"
+        title={t('Anulezi această vizită?')}
         onClose={() => setCancelTarget(null)}
       >
         {cancelTarget ? (
           <div className="modal-content">
             <p>
-              {cancelTarget.serviceName},{' '}
-              {formatLongDate(cancelTarget.startsAt)} la{' '}
-              {formatTime(cancelTarget.startsAt)}.
+              {t('{service}, {date} la {time}.', {
+                service: cancelTarget.serviceName,
+                date: formatLongDate(
+                  cancelTarget.startsAt,
+                  config?.settings.timezone,
+                  locale,
+                ),
+                time: formatTime(
+                  cancelTarget.startsAt,
+                  config?.settings.timezone,
+                  locale,
+                ),
+              })}
             </p>
             <Notice tone="warning">
-              Ora va deveni disponibilă imediat pentru alt client.
+              {t('Ora va deveni disponibilă imediat pentru alt client.')}
             </Notice>
             <div className="modal-actions">
               <Button
@@ -388,7 +411,7 @@ export default function MyBookingsPage() {
                 type="button"
                 onClick={() => setCancelTarget(null)}
               >
-                Păstrează vizita
+                {t('Păstrează vizita')}
               </Button>
               <Button
                 variant="danger"
@@ -396,7 +419,7 @@ export default function MyBookingsPage() {
                 busy={actionBusy}
                 onClick={confirmCancel}
               >
-                Da, anulează
+                {t('Da, anulează')}
               </Button>
             </div>
           </div>
@@ -405,12 +428,12 @@ export default function MyBookingsPage() {
 
       <Modal
         open={Boolean(rescheduleTarget)}
-        title="Mută vizita"
+        title={t('Mută vizita')}
         onClose={() => setRescheduleTarget(null)}
       >
         <div className="modal-content">
           <Field
-            label="Noua dată"
+            label={t('Noua dată')}
             type="date"
             min={todayInTimeZone()}
             max={addDaysToDateInput(
@@ -421,7 +444,7 @@ export default function MyBookingsPage() {
             onChange={(event) => setRescheduleDate(event.target.value)}
           />
           {actionBusy && !rescheduleSlots.length ? (
-            <LoadingState label="Verificăm orele…" />
+            <LoadingState label={t('Verificăm orele…')} />
           ) : rescheduleSlots.length ? (
             <div className="slot-grid slot-grid--modal">
               {rescheduleSlots.map((slot) => (
@@ -435,12 +458,14 @@ export default function MyBookingsPage() {
                     checked={rescheduleStart === slot.startsAt}
                     onChange={() => setRescheduleStart(slot.startsAt)}
                   />
-                  {formatTime(slot.startsAt)}
+                  {formatTime(slot.startsAt, config?.settings.timezone, locale)}
                 </label>
               ))}
             </div>
           ) : (
-            <Notice tone="info">Nu sunt ore libere în această zi.</Notice>
+            <Notice tone="info">
+              {t('Nu sunt ore libere în această zi.')}
+            </Notice>
           )}
           <div className="modal-actions">
             <Button
@@ -448,7 +473,7 @@ export default function MyBookingsPage() {
               type="button"
               onClick={() => setRescheduleTarget(null)}
             >
-              Renunță
+              {t('Renunță')}
             </Button>
             <Button
               type="button"
@@ -457,7 +482,7 @@ export default function MyBookingsPage() {
               onClick={confirmReschedule}
               icon={CalendarClock}
             >
-              Confirmă ora nouă
+              {t('Confirmă ora nouă')}
             </Button>
           </div>
         </div>

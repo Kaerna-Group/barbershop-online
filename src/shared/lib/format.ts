@@ -1,10 +1,14 @@
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>()
 
-function getFormatter(options: Intl.DateTimeFormatOptions, timezone: string) {
-  const key = `${timezone}:${JSON.stringify(options)}`
+function getFormatter(
+  options: Intl.DateTimeFormatOptions,
+  timezone: string,
+  locale: string,
+) {
+  const key = `${locale}:${timezone}:${JSON.stringify(options)}`
   let formatter = dateFormatterCache.get(key)
   if (!formatter) {
-    formatter = new Intl.DateTimeFormat('ro-RO', {
+    formatter = new Intl.DateTimeFormat(locale, {
       ...options,
       timeZone: timezone,
     })
@@ -13,31 +17,52 @@ function getFormatter(options: Intl.DateTimeFormatOptions, timezone: string) {
   return formatter
 }
 
-export function formatMoney(priceMinor: number, currency = 'RON') {
-  return new Intl.NumberFormat('ro-RO', {
+export function formatMoney(
+  priceMinor: number,
+  currency = 'RON',
+  locale = 'ro-RO',
+) {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: priceMinor % 100 === 0 ? 0 : 2,
   }).format(priceMinor / 100)
 }
 
-export function formatTime(iso: string, timezone = 'Europe/Bucharest') {
-  return getFormatter({ hour: '2-digit', minute: '2-digit' }, timezone).format(
-    new Date(iso),
-  )
-}
-
-export function formatLongDate(iso: string, timezone = 'Europe/Bucharest') {
+export function formatTime(
+  iso: string,
+  timezone = 'Europe/Bucharest',
+  locale = 'ro-RO',
+) {
   return getFormatter(
-    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
+    { hour: '2-digit', minute: '2-digit' },
     timezone,
+    locale,
   ).format(new Date(iso))
 }
 
-export function formatShortDate(iso: string, timezone = 'Europe/Bucharest') {
-  return getFormatter({ day: '2-digit', month: 'short' }, timezone).format(
-    new Date(iso),
-  )
+export function formatLongDate(
+  iso: string,
+  timezone = 'Europe/Bucharest',
+  locale = 'ro-RO',
+) {
+  return getFormatter(
+    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
+    timezone,
+    locale,
+  ).format(new Date(iso))
+}
+
+export function formatShortDate(
+  iso: string,
+  timezone = 'Europe/Bucharest',
+  locale = 'ro-RO',
+) {
+  return getFormatter(
+    { day: '2-digit', month: 'short' },
+    timezone,
+    locale,
+  ).format(new Date(iso))
 }
 
 export function toLocalDateInput(date: Date) {

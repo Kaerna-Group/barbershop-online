@@ -43,6 +43,7 @@ import {
   statusLabel,
   todayInTimeZone,
 } from '../shared/lib/format'
+import { useI18n, type Translate } from '../shared/i18n-context'
 import type {
   Booking,
   CalendarEntry,
@@ -64,17 +65,21 @@ import {
 
 type AdminTab = 'bookings' | 'schedule' | 'settings'
 
-const dayNames = [
-  'Duminică',
-  'Luni',
-  'Marți',
-  'Miercuri',
-  'Joi',
-  'Vineri',
-  'Sâmbătă',
-]
+function getDayNames(locale: string) {
+  return Array.from({ length: 7 }, (_, weekday) => {
+    const label = new Intl.DateTimeFormat(locale, {
+      weekday: 'long',
+      timeZone: 'UTC',
+    }).format(new Date(Date.UTC(2024, 0, 7 + weekday)))
+    return label.charAt(0).toLocaleUpperCase(locale) + label.slice(1)
+  })
+}
 
-function demoEntries(date: string, service: Service): CalendarEntry[] {
+function demoEntries(
+  date: string,
+  service: Service,
+  t: Translate,
+): CalendarEntry[] {
   const start = new Date(`${date}T10:00:00+03:00`)
   const secondStart = new Date(`${date}T12:30:00+03:00`)
   return [
@@ -87,7 +92,7 @@ function demoEntries(date: string, service: Service): CalendarEntry[] {
         start.getTime() + service.durationMinutes * 60_000,
       ).toISOString(),
       status: 'confirmed',
-      clientName: 'Client demonstrativ',
+      clientName: t('Client demonstrativ'),
       clientPhone: '+40 ••• ••• 112',
       serviceName: service.name,
       priceMinor: service.priceMinor,
@@ -106,12 +111,12 @@ function demoEntries(date: string, service: Service): CalendarEntry[] {
       status: 'confirmed',
       clientName: '',
       clientPhone: '',
-      serviceName: 'Pauză',
+      serviceName: t('Pauză'),
       priceMinor: 0,
       currency: 'RON',
       durationMinutes: 30,
       version: 1,
-      note: 'Pauză personală',
+      note: t('Pauză personală'),
     },
   ]
 }
@@ -123,6 +128,7 @@ function AdminBookings({
   config: PublicConfig
   demo: boolean
 }) {
+  const { locale, t } = useI18n()
   const [date, setDate] = useState(todayInTimeZone())
   const [entries, setEntries] = useState<CalendarEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -152,15 +158,19 @@ function AdminBookings({
     try {
       setEntries(
         demo
-          ? demoEntries(date, config.services[0] ?? fallbackConfig.services[0])
+          ? demoEntries(
+              date,
+              config.services[0] ?? fallbackConfig.services[0],
+              t,
+            )
           : await getAdminCalendar(date, date),
       )
     } catch {
-      setError('Calendarul nu a putut fi încărcat.')
+      setError(t('Calendarul nu a putut fi încărcat.'))
     } finally {
       setLoading(false)
     }
-  }, [config.services, date, demo])
+  }, [config.services, date, demo, t])
 
   useEffect(() => {
     void loadEntries()
@@ -174,9 +184,9 @@ function AdminBookings({
         setSlots(result)
         setSlot('')
       })
-      .catch(() => setError('Orele libere nu au putut fi încărcate.'))
+      .catch(() => setError(t('Orele libere nu au putut fi încărcate.')))
       .finally(() => setActionBusy(false))
-  }, [date, manualOpen, selectedService])
+  }, [date, manualOpen, selectedService, t])
 
   useEffect(() => {
     if (!moveTarget || demo) return
@@ -184,16 +194,16 @@ function AdminBookings({
     setMoveStart('')
     getRescheduleSlots(moveDate, moveTarget.id)
       .then(setMoveSlots)
-      .catch(() => setError('Orele pentru mutare nu au putut fi încărcate.'))
+      .catch(() => setError(t('Orele pentru mutare nu au putut fi încărcate.')))
       .finally(() => setActionBusy(false))
-  }, [demo, moveDate, moveTarget])
+  }, [demo, moveDate, moveTarget, t])
 
   const updateStatus = async (
     booking: CalendarEntry,
     status: Booking['status'],
   ) => {
     if (demo) {
-      setNotice('În modul demo modificările nu sunt salvate.')
+      setNotice(t('În modul demo modificările nu sunt salvate.'))
       return
     }
     setActionBusy(true)
@@ -202,7 +212,7 @@ function AdminBookings({
       await adminSetBookingStatus(booking.id, status, booking.version)
       await loadEntries()
     } catch {
-      setError('Starea nu a putut fi actualizată. Reîncarcă programările.')
+      setError(t('Starea nu a putut fi actualizată. Reîncarcă programările.'))
     } finally {
       setActionBusy(false)
     }
@@ -215,13 +225,15 @@ function AdminBookings({
       clientName.trim().length < 2 ||
       !clientPhone.trim()
     ) {
-      setError('Completează serviciul, ora, numele și telefonul.')
+      setError(t('Completează serviciul, ora, numele și telefonul.'))
       return
     }
     if (demo) {
       setManualOpen(false)
       setNotice(
-        'Formularul este funcțional; salvarea devine activă după conectarea bazei.',
+        t(
+          'Formularul este funcțional; salvarea devine activă după conectarea bazei.',
+        ),
       )
       return
     }
@@ -240,7 +252,7 @@ function AdminBookings({
       await loadEntries()
     } catch {
       setError(
-        'Programarea nu a fost salvată. Verifică dacă ora este încă liberă.',
+        t('Programarea nu a fost salvată. Verifică dacă ora este încă liberă.'),
       )
     } finally {
       setActionBusy(false)
@@ -249,12 +261,12 @@ function AdminBookings({
 
   const createBlock = async () => {
     if (blockStart >= blockEnd) {
-      setError('Ora de final trebuie să fie după ora de început.')
+      setError(t('Ora de final trebuie să fie după ora de început.'))
       return
     }
     if (demo) {
       setBlockOpen(false)
-      setNotice('Blocarea se va salva după conectarea bazei.')
+      setNotice(t('Blocarea se va salva după conectarea bazei.'))
       return
     }
     setActionBusy(true)
@@ -270,7 +282,9 @@ function AdminBookings({
       await loadEntries()
     } catch {
       setError(
-        'Intervalul nu poate fi blocat; verifică programul și suprapunerile.',
+        t(
+          'Intervalul nu poate fi blocat; verifică programul și suprapunerile.',
+        ),
       )
     } finally {
       setActionBusy(false)
@@ -281,7 +295,7 @@ function AdminBookings({
     if (!moveTarget || !moveStart) return
     if (demo) {
       setMoveTarget(null)
-      setNotice('Mutarea este disponibilă după conectarea bazei.')
+      setNotice(t('Mutarea este disponibilă după conectarea bazei.'))
       return
     }
     setActionBusy(true)
@@ -291,7 +305,9 @@ function AdminBookings({
       setMoveTarget(null)
       await loadEntries()
     } catch {
-      setError('Ora nu mai este liberă; vizita inițială a rămas neschimbată.')
+      setError(
+        t('Ora nu mai este liberă; vizita inițială a rămas neschimbată.'),
+      )
     } finally {
       setActionBusy(false)
     }
@@ -301,8 +317,8 @@ function AdminBookings({
     <section className="admin-section">
       <div className="admin-section__heading">
         <div>
-          <SectionLabel>Calendar</SectionLabel>
-          <h1>Programările zilei</h1>
+          <SectionLabel>{t('Calendar')}</SectionLabel>
+          <h1>{t('Programările zilei')}</h1>
         </div>
         <div className="admin-heading-actions">
           <Button
@@ -311,14 +327,14 @@ function AdminBookings({
             icon={Ban}
             onClick={() => setBlockOpen(true)}
           >
-            Blochează timp
+            {t('Blochează timp')}
           </Button>
           <Button
             type="button"
             icon={UserRoundPlus}
             onClick={() => setManualOpen(true)}
           >
-            Programare manuală
+            {t('Programare manuală')}
           </Button>
         </div>
       </div>
@@ -327,7 +343,7 @@ function AdminBookings({
         <button
           className="icon-button"
           type="button"
-          aria-label="Ziua anterioară"
+          aria-label={t('Ziua anterioară')}
           onClick={() => setDate(addDaysToDateInput(date, -1))}
         >
           <ChevronLeft aria-hidden="true" />
@@ -339,12 +355,18 @@ function AdminBookings({
             value={date}
             onChange={(event) => setDate(event.target.value)}
           />
-          <strong>{formatLongDate(`${date}T12:00:00`)}</strong>
+          <strong>
+            {formatLongDate(
+              `${date}T12:00:00`,
+              config.settings.timezone,
+              locale,
+            )}
+          </strong>
         </label>
         <button
           className="icon-button"
           type="button"
-          aria-label="Ziua următoare"
+          aria-label={t('Ziua următoare')}
           onClick={() => setDate(addDaysToDateInput(date, 1))}
         >
           <ChevronRight aria-hidden="true" />
@@ -355,7 +377,7 @@ function AdminBookings({
       {error ? <Notice tone="error">{error}</Notice> : null}
 
       {loading ? (
-        <LoadingState label="Încărcăm ziua…" />
+        <LoadingState label={t('Încărcăm ziua…')} />
       ) : entries.length ? (
         <div className="day-timeline">
           {entries.map((entry) => (
@@ -363,7 +385,9 @@ function AdminBookings({
               className={`timeline-entry timeline-entry--${entry.kind}`}
               key={entry.id}
             >
-              <time>{formatTime(entry.startsAt)}</time>
+              <time>
+                {formatTime(entry.startsAt, config.settings.timezone, locale)}
+              </time>
               <span className="timeline-entry__rule" />
               <div className="timeline-entry__card">
                 <div>
@@ -372,13 +396,21 @@ function AdminBookings({
                   </span>
                   <h3>
                     {entry.kind === 'block'
-                      ? entry.note || 'Timp blocat'
+                      ? entry.note || t('Timp blocat')
                       : entry.clientName}
                   </h3>
                   <p>
                     {entry.kind === 'booking'
                       ? `${entry.serviceName} · ${entry.clientPhone}`
-                      : `${formatTime(entry.startsAt)}–${formatTime(entry.endsAt)}`}
+                      : `${formatTime(
+                          entry.startsAt,
+                          config.settings.timezone,
+                          locale,
+                        )}–${formatTime(
+                          entry.endsAt,
+                          config.settings.timezone,
+                          locale,
+                        )}`}
                   </p>
                 </div>
                 {entry.kind === 'booking' ? (
@@ -386,7 +418,7 @@ function AdminBookings({
                     <span
                       className={`status-pill status-pill--${entry.status}`}
                     >
-                      {statusLabel(entry.status)}
+                      {t(statusLabel(entry.status))}
                     </span>
                     {entry.status === 'confirmed' ? (
                       <div className="entry-actions">
@@ -399,28 +431,28 @@ function AdminBookings({
                           }}
                           disabled={actionBusy}
                         >
-                          Mută
+                          {t('Mută')}
                         </button>
                         <button
                           type="button"
                           onClick={() => void updateStatus(entry, 'completed')}
                           disabled={actionBusy}
                         >
-                          <CheckCircle2 aria-hidden="true" /> Finalizată
+                          <CheckCircle2 aria-hidden="true" /> {t('Finalizată')}
                         </button>
                         <button
                           type="button"
                           onClick={() => void updateStatus(entry, 'no_show')}
                           disabled={actionBusy}
                         >
-                          <CircleOff aria-hidden="true" /> Nu a venit
+                          <CircleOff aria-hidden="true" /> {t('Nu a venit')}
                         </button>
                         <button
                           type="button"
                           onClick={() => void updateStatus(entry, 'cancelled')}
                           disabled={actionBusy}
                         >
-                          Anulează
+                          {t('Anulează')}
                         </button>
                       </div>
                     ) : null}
@@ -432,15 +464,15 @@ function AdminBookings({
         </div>
       ) : (
         <EmptyState
-          title="Zi liberă, deocamdată."
-          text="Nu există programări sau blocări pentru data aleasă."
+          title={t('Zi liberă, deocamdată.')}
+          text={t('Nu există programări sau blocări pentru data aleasă.')}
           action={
             <Button
               type="button"
               icon={Plus}
               onClick={() => setManualOpen(true)}
             >
-              Adaugă o programare
+              {t('Adaugă o programare')}
             </Button>
           }
         />
@@ -448,12 +480,12 @@ function AdminBookings({
 
       <Modal
         open={manualOpen}
-        title="Programare manuală"
+        title={t('Programare manuală')}
         onClose={() => setManualOpen(false)}
       >
         <div className="modal-content">
           <label className="field">
-            <span className="field__label">Serviciu</span>
+            <span className="field__label">{t('Serviciu')}</span>
             <select
               className="field__input"
               value={serviceId}
@@ -478,18 +510,18 @@ function AdminBookings({
                   checked={slot === item.startsAt}
                   onChange={() => setSlot(item.startsAt)}
                 />
-                {formatTime(item.startsAt)}
+                {formatTime(item.startsAt, config.settings.timezone, locale)}
               </label>
             ))}
           </div>
           <div className="form-grid">
             <Field
-              label="Nume client"
+              label={t('Nume client')}
               value={clientName}
               onChange={(event) => setClientName(event.target.value)}
             />
             <Field
-              label="Telefon"
+              label={t('Telefon')}
               type="tel"
               value={clientPhone}
               onChange={(event) => setClientPhone(event.target.value)}
@@ -501,7 +533,7 @@ function AdminBookings({
               type="button"
               onClick={() => setManualOpen(false)}
             >
-              Renunță
+              {t('Renunță')}
             </Button>
             <Button
               type="button"
@@ -509,7 +541,7 @@ function AdminBookings({
               onClick={createManual}
               icon={Plus}
             >
-              Adaugă programarea
+              {t('Adaugă programarea')}
             </Button>
           </div>
         </div>
@@ -517,27 +549,34 @@ function AdminBookings({
 
       <Modal
         open={blockOpen}
-        title="Blochează un interval"
+        title={t('Blochează un interval')}
         onClose={() => setBlockOpen(false)}
       >
         <div className="modal-content">
-          <p className="muted">Data: {formatLongDate(`${date}T12:00:00`)}</p>
+          <p className="muted">
+            {t('Data')}:&nbsp;
+            {formatLongDate(
+              `${date}T12:00:00`,
+              config.settings.timezone,
+              locale,
+            )}
+          </p>
           <div className="form-grid">
             <Field
-              label="De la"
+              label={t('De la')}
               type="time"
               value={blockStart}
               onChange={(event) => setBlockStart(event.target.value)}
             />
             <Field
-              label="Până la"
+              label={t('Până la')}
               type="time"
               value={blockEnd}
               onChange={(event) => setBlockEnd(event.target.value)}
             />
           </div>
           <Field
-            label="Motiv intern"
+            label={t('Motiv intern')}
             value={blockNote}
             onChange={(event) => setBlockNote(event.target.value)}
           />
@@ -547,7 +586,7 @@ function AdminBookings({
               type="button"
               onClick={() => setBlockOpen(false)}
             >
-              Renunță
+              {t('Renunță')}
             </Button>
             <Button
               type="button"
@@ -555,7 +594,7 @@ function AdminBookings({
               onClick={createBlock}
               icon={Ban}
             >
-              Blochează timpul
+              {t('Blochează timpul')}
             </Button>
           </div>
         </div>
@@ -563,20 +602,22 @@ function AdminBookings({
 
       <Modal
         open={Boolean(moveTarget)}
-        title="Mută programarea"
+        title={t('Mută programarea')}
         onClose={() => setMoveTarget(null)}
       >
         <div className="modal-content">
           <Field
-            label="Noua dată"
+            label={t('Noua dată')}
             type="date"
             value={moveDate}
             onChange={(event) => setMoveDate(event.target.value)}
           />
           {demo ? (
-            <Notice tone="info">În modul demo, mutarea nu este salvată.</Notice>
+            <Notice tone="info">
+              {t('În modul demo, mutarea nu este salvată.')}
+            </Notice>
           ) : actionBusy && !moveSlots.length ? (
-            <LoadingState label="Verificăm orele…" />
+            <LoadingState label={t('Verificăm orele…')} />
           ) : moveSlots.length ? (
             <div className="slot-grid slot-grid--modal">
               {moveSlots.map((item) => (
@@ -590,12 +631,14 @@ function AdminBookings({
                     checked={moveStart === item.startsAt}
                     onChange={() => setMoveStart(item.startsAt)}
                   />
-                  {formatTime(item.startsAt)}
+                  {formatTime(item.startsAt, config.settings.timezone, locale)}
                 </label>
               ))}
             </div>
           ) : (
-            <Notice tone="info">Nu sunt ore disponibile în această zi.</Notice>
+            <Notice tone="info">
+              {t('Nu sunt ore disponibile în această zi.')}
+            </Notice>
           )}
           <div className="modal-actions">
             <Button
@@ -603,7 +646,7 @@ function AdminBookings({
               type="button"
               onClick={() => setMoveTarget(null)}
             >
-              Renunță
+              {t('Renunță')}
             </Button>
             <Button
               type="button"
@@ -611,7 +654,7 @@ function AdminBookings({
               disabled={!demo && !moveStart}
               onClick={moveBooking}
             >
-              Confirmă mutarea
+              {t('Confirmă mutarea')}
             </Button>
           </div>
         </div>
@@ -621,6 +664,8 @@ function AdminBookings({
 }
 
 function AdminSchedule({ demo }: { demo: boolean }) {
+  const { locale, t } = useI18n()
+  const dayNames = useMemo(() => getDayNames(locale), [locale])
   const [windows, setWindows] = useState<WeeklyWindow[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -634,9 +679,9 @@ function AdminSchedule({ demo }: { demo: boolean }) {
   useEffect(() => {
     getWeeklySchedule()
       .then(setWindows)
-      .catch(() => setError('Programul săptămânal nu a putut fi încărcat.'))
+      .catch(() => setError(t('Programul săptămânal nu a putut fi încărcat.')))
       .finally(() => setLoading(false))
-  }, [])
+  }, [t])
 
   const updateWindow = (
     index: number,
@@ -665,20 +710,20 @@ function AdminSchedule({ demo }: { demo: boolean }) {
 
   const save = async () => {
     if (windows.some((window) => window.start >= window.end)) {
-      setError('Fiecare interval trebuie să aibă finalul după început.')
+      setError(t('Fiecare interval trebuie să aibă finalul după început.'))
       return
     }
     if (demo) {
-      setMessage('Programul este corect; în modul demo nu este salvat.')
+      setMessage(t('Programul este corect; în modul demo nu este salvat.'))
       return
     }
     setBusy(true)
     setError('')
     try {
       await saveWeeklySchedule(windows)
-      setMessage('Programul săptămânal a fost salvat.')
+      setMessage(t('Programul săptămânal a fost salvat.'))
     } catch {
-      setError('Programul nu a putut fi salvat. Verifică intervalele.')
+      setError(t('Programul nu a putut fi salvat. Verifică intervalele.'))
     } finally {
       setBusy(false)
     }
@@ -686,11 +731,11 @@ function AdminSchedule({ demo }: { demo: boolean }) {
 
   const saveOverride = async () => {
     if (!overrideClosed && overrideStart >= overrideEnd) {
-      setError('Intervalul special nu este valid.')
+      setError(t('Intervalul special nu este valid.'))
       return
     }
     if (demo) {
-      setMessage('Excepția este pregătită; în modul demo nu este salvată.')
+      setMessage(t('Excepția este pregătită; în modul demo nu este salvată.'))
       return
     }
     setBusy(true)
@@ -701,31 +746,34 @@ function AdminSchedule({ demo }: { demo: boolean }) {
         overrideClosed ? [] : [{ start: overrideStart, end: overrideEnd }],
       )
       setMessage(
-        'Excepția a fost salvată. Programările existente nu au fost modificate.',
+        t(
+          'Excepția a fost salvată. Programările existente nu au fost modificate.',
+        ),
       )
     } catch {
-      setError('Excepția intră în conflict cu o programare existentă.')
+      setError(t('Excepția intră în conflict cu o programare existentă.'))
     } finally {
       setBusy(false)
     }
   }
 
-  if (loading) return <LoadingState label="Încărcăm programul…" />
+  if (loading) return <LoadingState label={t('Încărcăm programul…')} />
 
   return (
     <section className="admin-section">
       <div className="admin-section__heading">
         <div>
-          <SectionLabel>Disponibilitate</SectionLabel>
-          <h1>Program de lucru</h1>
+          <SectionLabel>{t('Disponibilitate')}</SectionLabel>
+          <h1>{t('Program de lucru')}</h1>
         </div>
         <Button type="button" busy={busy} icon={Save} onClick={save}>
-          Salvează programul
+          {t('Salvează programul')}
         </Button>
       </div>
       <p className="section-intro">
-        Poți adăuga două intervale în aceeași zi pentru a păstra automat o pauză
-        între ele.
+        {t(
+          'Poți adăuga două intervale în aceeași zi pentru a păstra automat o pauză între ele.',
+        )}
       </p>
       {message ? <Notice tone="success">{message}</Notice> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
@@ -739,13 +787,13 @@ function AdminSchedule({ demo }: { demo: boolean }) {
             <div className="weekday-row" key={day}>
               <div className="weekday-row__day">
                 <strong>{day}</strong>
-                <span>{dayWindows.length ? 'Lucrezi' : 'Liber'}</span>
+                <span>{t(dayWindows.length ? 'Lucrezi' : 'Liber')}</span>
               </div>
               <div className="weekday-row__windows">
                 {dayWindows.map(({ window, index }) => (
                   <div className="window-editor" key={`${weekday}-${index}`}>
                     <input
-                      aria-label={`${day}, început`}
+                      aria-label={t('{day}, început', { day })}
                       type="time"
                       value={window.start}
                       onChange={(event) =>
@@ -754,7 +802,7 @@ function AdminSchedule({ demo }: { demo: boolean }) {
                     />
                     <span>—</span>
                     <input
-                      aria-label={`${day}, final`}
+                      aria-label={t('{day}, final', { day })}
                       type="time"
                       value={window.end}
                       onChange={(event) =>
@@ -764,7 +812,7 @@ function AdminSchedule({ demo }: { demo: boolean }) {
                     <button
                       type="button"
                       onClick={() => removeWindow(index)}
-                      aria-label={`Șterge intervalul de ${day}`}
+                      aria-label={t('Șterge intervalul de {day}', { day })}
                     >
                       ×
                     </button>
@@ -775,7 +823,7 @@ function AdminSchedule({ demo }: { demo: boolean }) {
                   type="button"
                   onClick={() => addWindow(weekday)}
                 >
-                  <Plus aria-hidden="true" /> Adaugă interval
+                  <Plus aria-hidden="true" /> {t('Adaugă interval')}
                 </button>
               </div>
             </div>
@@ -785,15 +833,17 @@ function AdminSchedule({ demo }: { demo: boolean }) {
 
       <div className="override-card">
         <div>
-          <SectionLabel>Excepție</SectionLabel>
-          <h2>O zi diferită sau concediu</h2>
+          <SectionLabel>{t('Excepție')}</SectionLabel>
+          <h2>{t('O zi diferită sau concediu')}</h2>
           <p>
-            O excepție înlocuiește programul obișnuit doar pentru data aleasă.
+            {t(
+              'O excepție înlocuiește programul obișnuit doar pentru data aleasă.',
+            )}
           </p>
         </div>
         <div className="override-form">
           <Field
-            label="Data"
+            label={t('Data')}
             type="date"
             value={overrideDate}
             onChange={(event) => setOverrideDate(event.target.value)}
@@ -805,20 +855,20 @@ function AdminSchedule({ demo }: { demo: boolean }) {
               onChange={(event) => setOverrideClosed(event.target.checked)}
             />
             <span>
-              <strong>Zi închisă</strong>
-              <small>Nu se vor oferi ore noi.</small>
+              <strong>{t('Zi închisă')}</strong>
+              <small>{t('Nu se vor oferi ore noi.')}</small>
             </span>
           </label>
           {!overrideClosed ? (
             <div className="form-grid">
               <Field
-                label="De la"
+                label={t('De la')}
                 type="time"
                 value={overrideStart}
                 onChange={(event) => setOverrideStart(event.target.value)}
               />
               <Field
-                label="Până la"
+                label={t('Până la')}
                 type="time"
                 value={overrideEnd}
                 onChange={(event) => setOverrideEnd(event.target.value)}
@@ -832,7 +882,7 @@ function AdminSchedule({ demo }: { demo: boolean }) {
             onClick={saveOverride}
             icon={CalendarDays}
           >
-            Salvează excepția
+            {t('Salvează excepția')}
           </Button>
         </div>
       </div>
@@ -847,6 +897,7 @@ function AdminSettings({
   initialConfig: PublicConfig
   demo: boolean
 }) {
+  const { t } = useI18n()
   const [config, setConfig] = useState(initialConfig)
   const [services, setServices] = useState(initialConfig.services)
   const [busy, setBusy] = useState(false)
@@ -855,11 +906,11 @@ function AdminSettings({
 
   const saveProfile = async () => {
     if (!config.profile.name.trim() || !config.profile.addressLine.trim()) {
-      setError('Numele și adresa sunt obligatorii.')
+      setError(t('Numele și adresa sunt obligatorii.'))
       return
     }
     if (demo) {
-      setMessage('Datele sunt valide; în modul demo nu sunt salvate.')
+      setMessage(t('Datele sunt valide; în modul demo nu sunt salvate.'))
       return
     }
     setBusy(true)
@@ -868,9 +919,9 @@ function AdminSettings({
         adminSavePublicProfile(config.profile),
         adminSaveSettings(config.settings),
       ])
-      setMessage('Datele publice și regulile au fost salvate.')
+      setMessage(t('Datele publice și regulile au fost salvate.'))
     } catch {
-      setError('Setările nu au putut fi salvate.')
+      setError(t('Setările nu au putut fi salvate.'))
     } finally {
       setBusy(false)
     }
@@ -882,11 +933,11 @@ function AdminSettings({
       service.durationMinutes <= 0 ||
       service.priceMinor < 0
     ) {
-      setError('Verifică numele, durata și prețul serviciului.')
+      setError(t('Verifică numele, durata și prețul serviciului.'))
       return
     }
     if (demo) {
-      setMessage('Serviciul este valid; în modul demo nu este salvat.')
+      setMessage(t('Serviciul este valid; în modul demo nu este salvat.'))
       return
     }
     setBusy(true)
@@ -895,9 +946,9 @@ function AdminSettings({
       const latest = await getPublicConfig()
       setServices(latest.services)
       setConfig(latest)
-      setMessage(`Serviciul ${index + 1} a fost salvat.`)
+      setMessage(t('Serviciul {number} a fost salvat.', { number: index + 1 }))
     } catch {
-      setError('Serviciul nu a putut fi salvat.')
+      setError(t('Serviciul nu a putut fi salvat.'))
     } finally {
       setBusy(false)
     }
@@ -915,11 +966,11 @@ function AdminSettings({
     <section className="admin-section">
       <div className="admin-section__heading">
         <div>
-          <SectionLabel>Configurare</SectionLabel>
-          <h1>Setările programării</h1>
+          <SectionLabel>{t('Configurare')}</SectionLabel>
+          <h1>{t('Setările programării')}</h1>
         </div>
         <Button type="button" busy={busy} icon={Save} onClick={saveProfile}>
-          Salvează setările
+          {t('Salvează setările')}
         </Button>
       </div>
       {message ? <Notice tone="success">{message}</Notice> : null}
@@ -928,12 +979,12 @@ function AdminSettings({
       <div className="settings-grid">
         <article className="settings-card">
           <div className="settings-card__heading">
-            <h2>Date publice</h2>
-            <p>Apar pe pagina de programare și în confirmare.</p>
+            <h2>{t('Date publice')}</h2>
+            <p>{t('Apar pe pagina de programare și în confirmare.')}</p>
           </div>
           <div className="form-grid">
             <Field
-              label="Numele afișat"
+              label={t('Numele afișat')}
               value={config.profile.name}
               onChange={(event) =>
                 setConfig((current) => ({
@@ -943,7 +994,7 @@ function AdminSettings({
               }
             />
             <Field
-              label="Telefon afișat"
+              label={t('Telefon afișat')}
               value={config.profile.phoneDisplay}
               onChange={(event) =>
                 setConfig((current) => ({
@@ -957,7 +1008,7 @@ function AdminSettings({
             />
           </div>
           <Field
-            label="Descriere scurtă"
+            label={t('Descriere scurtă')}
             value={config.profile.shortIntro}
             onChange={(event) =>
               setConfig((current) => ({
@@ -967,7 +1018,7 @@ function AdminSettings({
             }
           />
           <Field
-            label="Adresa completă"
+            label={t('Adresa completă')}
             value={config.profile.addressLine}
             onChange={(event) =>
               setConfig((current) => ({
@@ -981,7 +1032,7 @@ function AdminSettings({
           />
           <div className="form-grid">
             <Field
-              label="Telefon pentru apel (format +40…)"
+              label={t('Telefon pentru apel (format +40…)')}
               value={config.profile.phoneHref ?? ''}
               onChange={(event) =>
                 setConfig((current) => ({
@@ -994,7 +1045,7 @@ function AdminSettings({
               }
             />
             <Field
-              label="Locul de primire (opțional)"
+              label={t('Locul de primire (opțional)')}
               value={config.profile.venueLabel ?? ''}
               onChange={(event) =>
                 setConfig((current) => ({
@@ -1011,12 +1062,12 @@ function AdminSettings({
 
         <article className="settings-card">
           <div className="settings-card__heading">
-            <h2>Reguli</h2>
-            <p>Se aplică automat programărilor făcute de client.</p>
+            <h2>{t('Reguli')}</h2>
+            <p>{t('Se aplică automat programărilor făcute de client.')}</p>
           </div>
           <div className="rule-grid">
             <Field
-              label="Pas ore (minute)"
+              label={t('Pas ore (minute)')}
               type="number"
               min={5}
               max={120}
@@ -1032,7 +1083,7 @@ function AdminSettings({
               }
             />
             <Field
-              label="Minim înainte (ore)"
+              label={t('Minim înainte (ore)')}
               type="number"
               min={0}
               max={168}
@@ -1048,7 +1099,7 @@ function AdminSettings({
               }
             />
             <Field
-              label="Orizont (zile)"
+              label={t('Orizont (zile)')}
               type="number"
               min={1}
               max={365}
@@ -1064,7 +1115,7 @@ function AdminSettings({
               }
             />
             <Field
-              label="Modificări până la (ore)"
+              label={t('Modificări până la (ore)')}
               type="number"
               min={0}
               max={168}
@@ -1080,7 +1131,7 @@ function AdminSettings({
               }
             />
             <Field
-              label="Maximum vizite viitoare"
+              label={t('Maximum vizite viitoare')}
               type="number"
               min={1}
               max={20}
@@ -1096,7 +1147,7 @@ function AdminSettings({
               }
             />
             <Field
-              label="Reminder înainte (ore)"
+              label={t('Reminder înainte (ore)')}
               type="number"
               min={1}
               max={168}
@@ -1129,8 +1180,10 @@ function AdminSettings({
               }
             />
             <span>
-              <strong>Programarea online este activă</strong>
-              <small>Dezactivează temporar fără a șterge programul.</small>
+              <strong>{t('Programarea online este activă')}</strong>
+              <small>
+                {t('Dezactivează temporar fără a șterge programul.')}
+              </small>
             </span>
           </label>
         </article>
@@ -1139,8 +1192,8 @@ function AdminSettings({
       <div className="services-editor">
         <div className="services-editor__heading">
           <div>
-            <SectionLabel>Catalog</SectionLabel>
-            <h2>Servicii</h2>
+            <SectionLabel>{t('Catalog')}</SectionLabel>
+            <h2>{t('Servicii')}</h2>
           </div>
           <Button
             variant="secondary"
@@ -1162,7 +1215,7 @@ function AdminSettings({
               ])
             }
           >
-            Serviciu nou
+            {t('Serviciu nou')}
           </Button>
         </div>
         <div className="service-editor-list">
@@ -1176,14 +1229,14 @@ function AdminSettings({
               </div>
               <div className="service-editor__fields">
                 <Field
-                  label="Denumire"
+                  label={t('Denumire')}
                   value={service.name}
                   onChange={(event) =>
                     updateService(index, { name: event.target.value })
                   }
                 />
                 <Field
-                  label="Descriere"
+                  label={t('Descriere')}
                   value={service.description ?? ''}
                   onChange={(event) =>
                     updateService(index, {
@@ -1193,7 +1246,7 @@ function AdminSettings({
                 />
                 <div className="form-grid form-grid--three">
                   <Field
-                    label="Durată (minute)"
+                    label={t('Durată (minute)')}
                     type="number"
                     min={5}
                     value={service.durationMinutes}
@@ -1204,7 +1257,7 @@ function AdminSettings({
                     }
                   />
                   <Field
-                    label="Preț (RON)"
+                    label={t('Preț (RON)')}
                     type="number"
                     min={0}
                     step="0.01"
@@ -1226,8 +1279,8 @@ function AdminSettings({
                       }
                     />
                     <span>
-                      <strong>Activ</strong>
-                      <small>Vizibil clienților</small>
+                      <strong>{t('Activ')}</strong>
+                      <small>{t('Vizibil clienților')}</small>
                     </span>
                   </label>
                 </div>
@@ -1239,7 +1292,7 @@ function AdminSettings({
                 icon={Save}
                 onClick={() => void saveService(service, index)}
               >
-                Salvează
+                {t('Salvează')}
               </Button>
             </article>
           ))}
@@ -1250,6 +1303,7 @@ function AdminSettings({
 }
 
 export default function AdminPage() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState<AdminTab>('bookings')
@@ -1278,7 +1332,7 @@ export default function AdminPage() {
     }
     prepare()
       .catch(() => {
-        if (alive) setError('Panoul nu poate fi încărcat momentan.')
+        if (alive) setError(t('Panoul nu poate fi încărcat momentan.'))
       })
       .finally(() => {
         if (alive) setLoading(false)
@@ -1286,15 +1340,19 @@ export default function AdminPage() {
     return () => {
       alive = false
     }
-  }, [demo, navigate])
+  }, [demo, navigate, t])
 
   const tabs = useMemo(
     () => [
-      { id: 'bookings' as const, label: 'Programări', icon: CalendarDays },
-      { id: 'schedule' as const, label: 'Program', icon: Clock3 },
-      { id: 'settings' as const, label: 'Setări', icon: Settings2 },
+      {
+        id: 'bookings' as const,
+        label: t('Programări'),
+        icon: CalendarDays,
+      },
+      { id: 'schedule' as const, label: t('Program'), icon: Clock3 },
+      { id: 'settings' as const, label: t('Setări'), icon: Settings2 },
     ],
-    [],
+    [t],
   )
 
   return (
@@ -1307,11 +1365,11 @@ export default function AdminPage() {
               <Scissors aria-hidden="true" />
             </span>
             <div>
-              <strong>Panou</strong>
-              <small>Frizer</small>
+              <strong>{t('Panou')}</strong>
+              <small>{t('Frizer')}</small>
             </div>
           </div>
-          <nav aria-label="Panou administrare">
+          <nav aria-label={t('Panou administrare')}>
             {tabs.map(({ id, label, icon: Icon }) => (
               <button
                 className={tab === id ? 'is-active' : ''}
@@ -1331,21 +1389,23 @@ export default function AdminPage() {
               navigate('/admin/login')
             }}
           >
-            <LogOut aria-hidden="true" /> Ieși din cont
+            <LogOut aria-hidden="true" /> {t('Ieși din cont')}
           </button>
         </aside>
 
         <main className="admin-main">
           {demo ? (
             <Notice tone="warning">
-              <strong>Mod demonstrativ.</strong> Panoul este doar pentru
-              previzualizare; datele nu sunt salvate.
+              <strong>{t('Mod demonstrativ.')}</strong>{' '}
+              {t(
+                'Panoul este doar pentru previzualizare; datele nu sunt salvate.',
+              )}
             </Notice>
           ) : null}
           {loading ? (
-            <LoadingState label="Pregătim panoul…" />
+            <LoadingState label={t('Pregătim panoul…')} />
           ) : error || !config ? (
-            <Notice tone="error">{error || 'Configurația lipsește.'}</Notice>
+            <Notice tone="error">{error || t('Configurația lipsește.')}</Notice>
           ) : tab === 'bookings' ? (
             <AdminBookings config={config} demo={demo} />
           ) : tab === 'schedule' ? (

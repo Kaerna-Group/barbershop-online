@@ -296,7 +296,9 @@ export default function MyBookingsPage() {
               <div>
                 <SectionLabel>{t('Contul meu')}</SectionLabel>
                 <h1>{t('Vizitele mele')}</h1>
-                <p>{session.user.phone}</p>
+                <p>
+                  {isMockMode ? t('Sesiune demonstrativă') : session.user.phone}
+                </p>
               </div>
               <Button
                 variant="ghost"

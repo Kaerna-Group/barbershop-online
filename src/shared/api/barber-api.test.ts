@@ -37,6 +37,30 @@ async function findBookableDay(service: Service, startOffset: number) {
 describe('mock barber API', () => {
   beforeEach(() => resetMockBackend())
 
+  it('creates and owns a demo booking without phone verification', async () => {
+    expect(await getSession()).toBeNull()
+    const config = await getPublicConfig()
+    const service = config.services[0]
+    expect(service).toBeDefined()
+    if (!service) return
+
+    const day = await findBookableDay(service, 1)
+    const slot = (await getAvailableSlots(day, service))[0]
+    expect(slot).toBeDefined()
+    if (!slot) return
+
+    const booking = await createBooking({
+      serviceId: service.id,
+      startsAt: slot.startsAt,
+      clientName: 'Demo Guest',
+      requestId: 'anonymous-mock-request',
+    })
+
+    expect(booking.clientPhone).toBe('')
+    expect((await getSession())?.user.phone).toBeUndefined()
+    expect((await getMyBookings()).map((item) => item.id)).toContain(booking.id)
+  })
+
   it('completes phone verification, booking, rescheduling and cancellation', async () => {
     expect(isMockMode).toBe(true)
     const phone = '+40700123456'

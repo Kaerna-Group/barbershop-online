@@ -13,7 +13,7 @@ import {
   createBooking,
   getAvailableSlots,
   getSession,
-  mockOtpCode,
+  isMockMode,
   requestPhoneCode,
   verifyPhoneCode,
 } from '../../shared/api/barber-api'
@@ -255,9 +255,13 @@ export function BookingFlow({ config }: BookingFlowProps) {
           </div>
         </div>
         <p className="muted">
-          {t('Confirmarea este trimisă la {phone}.', {
-            phone: verifiedPhone ?? phone,
-          })}
+          {isMockMode
+            ? t(
+                'Programarea demonstrativă a fost salvată. Nu se trimite niciun SMS.',
+              )
+            : t('Confirmarea este trimisă la {phone}.', {
+                phone: verifiedPhone ?? phone,
+              })}
         </p>
         <Link className="button button--primary" to="/my-bookings">
           <span>{t('Vezi vizitele mele')}</span>
@@ -305,8 +309,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
         <Notice tone="warning">
           <strong>{t('Mod demonstrativ.')}</strong>{' '}
           {t(
-            'Poți testa programarea completă cu orice număr valid și codul {code}. Datele dispar după reîncărcare.',
-            { code: mockOtpCode },
+            'Poți testa programarea completă fără telefon sau cod SMS. Datele dispar după reîncărcare.',
           )}
         </Notice>
       ) : null}
@@ -480,7 +483,9 @@ export function BookingFlow({ config }: BookingFlowProps) {
                 <h3>{t('Confirmă programarea.')}</h3>
                 <p>
                   {t(
-                    'Numărul este folosit pentru cod și notificări despre vizită.',
+                    isMockMode
+                      ? 'În modul demonstrativ nu este necesar un număr de telefon.'
+                      : 'Numărul este folosit pentru cod și notificări despre vizită.',
                   )}
                 </p>
               </div>
@@ -497,50 +502,52 @@ export function BookingFlow({ config }: BookingFlowProps) {
                   disabled={busy}
                 />
 
-                {!verifiedPhone ? (
-                  <>
-                    <Field
-                      label={t('Telefon')}
-                      autoComplete="tel"
-                      inputMode="tel"
-                      value={phone}
-                      onChange={(event) => setPhone(event.target.value)}
-                      placeholder="+40 7xx xxx xxx"
-                      disabled={busy || codeSent}
-                      hint={t('Include prefixul de țară.')}
-                    />
-                    {codeSent ? (
-                      <div className="otp-row">
-                        <Field
-                          label={t('Codul SMS')}
-                          autoComplete="one-time-code"
-                          inputMode="numeric"
-                          maxLength={6}
-                          value={otp}
-                          onChange={(event) =>
-                            setOtp(event.target.value.replace(/\D/g, ''))
-                          }
-                          placeholder="000000"
-                          disabled={busy}
-                        />
-                        <button
-                          className="text-button"
-                          type="button"
-                          onClick={() => {
-                            setCodeSent(false)
-                            setOtp('')
-                          }}
-                        >
-                          {t('Schimbă numărul')}
-                        </button>
-                      </div>
-                    ) : null}
-                  </>
-                ) : (
-                  <Notice tone="success">
-                    <strong>{t('Telefon confirmat:')}</strong> {verifiedPhone}
-                  </Notice>
-                )}
+                {!isMockMode ? (
+                  !verifiedPhone ? (
+                    <>
+                      <Field
+                        label={t('Telefon')}
+                        autoComplete="tel"
+                        inputMode="tel"
+                        value={phone}
+                        onChange={(event) => setPhone(event.target.value)}
+                        placeholder="+40 7xx xxx xxx"
+                        disabled={busy || codeSent}
+                        hint={t('Include prefixul de țară.')}
+                      />
+                      {codeSent ? (
+                        <div className="otp-row">
+                          <Field
+                            label={t('Codul SMS')}
+                            autoComplete="one-time-code"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={otp}
+                            onChange={(event) =>
+                              setOtp(event.target.value.replace(/\D/g, ''))
+                            }
+                            placeholder="000000"
+                            disabled={busy}
+                          />
+                          <button
+                            className="text-button"
+                            type="button"
+                            onClick={() => {
+                              setCodeSent(false)
+                              setOtp('')
+                            }}
+                          >
+                            {t('Schimbă numărul')}
+                          </button>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <Notice tone="success">
+                      <strong>{t('Telefon confirmat:')}</strong> {verifiedPhone}
+                    </Notice>
+                  )
+                ) : null}
               </div>
 
               <aside className="summary-card summary-card--vertical">
@@ -614,6 +621,10 @@ export function BookingFlow({ config }: BookingFlowProps) {
             icon={ArrowRight}
           >
             {t('Continuă')}
+          </Button>
+        ) : isMockMode ? (
+          <Button type="button" busy={busy} onClick={saveBooking} icon={Check}>
+            {t('Creează programarea demo')}
           </Button>
         ) : !authKnown ? (
           <Button busy disabled>

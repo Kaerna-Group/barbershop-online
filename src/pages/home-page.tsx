@@ -8,7 +8,7 @@ import {
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BookingFlow } from '../features/booking/booking-flow'
-import { getPublicConfig } from '../shared/api/barber-api'
+import { getPublicConfig, isMockMode } from '../shared/api/barber-api'
 import { useI18n } from '../shared/i18n-context'
 import type { PublicConfig } from '../shared/model/types'
 import {
@@ -60,7 +60,9 @@ export default function HomePage() {
             </h1>
             <p className="booking-hero__lead">
               {t(
-                'Alegi serviciul, ziua și ora. Confirmi telefonul, iar locul este rezervat.',
+                isMockMode
+                  ? 'Alegi serviciul, ziua și ora. În modul demonstrativ nu ai nevoie de telefon.'
+                  : 'Alegi serviciul, ziua și ora. Confirmi telefonul, iar locul este rezervat.',
               )}
             </p>
 

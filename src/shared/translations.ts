@@ -19,6 +19,8 @@ const russian: Record<string, string> = {
   'Fără așteptare.': 'Без ожидания.',
   'Alegi serviciul, ziua și ora. Confirmi telefonul, iar locul este rezervat.':
     'Выбираешь услугу, день и время. Подтверждаешь телефон — место забронировано.',
+  'Alegi serviciul, ziua și ora. În modul demonstrativ nu ai nevoie de telefon.':
+    'Выбираешь услугу, день и время. В деморежиме телефон не нужен.',
   'Un singur client': 'Один клиент',
   'Timpul nu se împarte între programări.':
     'Время полностью отведено одной записи.',
@@ -67,6 +69,8 @@ const russian: Record<string, string> = {
   Preț: 'Цена',
   'Confirmarea este trimisă la {phone}.':
     'Подтверждение отправлено на {phone}.',
+  'Programarea demonstrativă a fost salvată. Nu se trimite niciun SMS.':
+    'Тестовая запись сохранена. SMS не отправляется.',
   'Vezi vizitele mele': 'Посмотреть мои визиты',
   'Nu există încă servicii active. Frizerul trebuie să adauge cel puțin unul în setări.':
     'Активных услуг пока нет. Парикмахеру нужно добавить хотя бы одну в настройках.',
@@ -80,8 +84,8 @@ const russian: Record<string, string> = {
   'Mod demonstrativ.': 'Деморежим.',
   'Poți parcurge alegerea serviciului și a orei; confirmarea devine activă după conectarea Supabase.':
     'Можно выбрать услугу и время; подтверждение заработает после подключения Supabase.',
-  'Poți testa programarea completă cu orice număr valid și codul {code}. Datele dispar după reîncărcare.':
-    'Можно полностью проверить запись: введи любой корректный номер и код {code}. После перезагрузки данные сбросятся.',
+  'Poți testa programarea completă fără telefon sau cod SMS. Datele dispar după reîncărcare.':
+    'Можно полностью проверить запись без телефона и SMS-кода. После перезагрузки данные сбросятся.',
   'Ce alegi?': 'Что выбираешь?',
   'Durata este rezervată integral pentru tine.':
     'Вся продолжительность зарезервирована для тебя.',
@@ -100,6 +104,8 @@ const russian: Record<string, string> = {
   'Confirmă programarea.': 'Подтверди запись.',
   'Numărul este folosit pentru cod și notificări despre vizită.':
     'Номер используется для кода и уведомлений о визите.',
+  'În modul demonstrativ nu este necesar un număr de telefon.':
+    'В деморежиме номер телефона не нужен.',
   'Numele tău': 'Твоё имя',
   'Cum să te trecem în programare': 'Как указать тебя в записи',
   Telefon: 'Телефон',
@@ -115,6 +121,7 @@ const russian: Record<string, string> = {
   Continuă: 'Продолжить',
   'Verificare sesiune': 'Проверка сессии',
   'Confirmă programarea': 'Подтвердить запись',
+  'Creează programarea demo': 'Создать тестовую запись',
   'Verifică și confirmă': 'Проверить и подтвердить',
   'Trimite codul': 'Отправить код',
   'Scrie numărul complet, cu prefixul de țară.':
@@ -127,6 +134,7 @@ const russian: Record<string, string> = {
     'Код неверен или истёк. Запроси новый код.',
   'Cod de test: {code}. Nu se trimite niciun SMS.':
     'Тестовый код: {code}. SMS не отправляется.',
+  'Sesiune demonstrativă': 'Демонстрационная сессия',
   'Acces securizat': 'Безопасный доступ',
   'Vizitele tale, într-un singur loc.': 'Все твои визиты в одном месте.',
   'Folosește același număr confirmat la programare. Nu ai nevoie de parolă sau email.':
@@ -374,6 +382,8 @@ const english: Record<string, string> = {
   'Fără așteptare.': 'No waiting.',
   'Alegi serviciul, ziua și ora. Confirmi telefonul, iar locul este rezervat.':
     'Choose a service, day and time. Confirm your phone and your slot is reserved.',
+  'Alegi serviciul, ziua și ora. În modul demonstrativ nu ai nevoie de telefon.':
+    'Choose a service, day and time. No phone is needed in demo mode.',
   'Un singur client': 'One client at a time',
   'Timpul nu se împarte între programări.':
     'Your appointment time is entirely yours.',
@@ -422,6 +432,8 @@ const english: Record<string, string> = {
   'Ne vedem {date}.': 'See you {date}.',
   Preț: 'Price',
   'Confirmarea este trimisă la {phone}.': 'Confirmation was sent to {phone}.',
+  'Programarea demonstrativă a fost salvată. Nu se trimite niciun SMS.':
+    'The demo appointment was saved. No SMS is sent.',
   'Vezi vizitele mele': 'View my appointments',
   'Nu există încă servicii active. Frizerul trebuie să adauge cel puțin unul în setări.':
     'There are no active services yet. The barber needs to add one in settings.',
@@ -435,8 +447,8 @@ const english: Record<string, string> = {
   'Mod demonstrativ.': 'Demo mode.',
   'Poți parcurge alegerea serviciului și a orei; confirmarea devine activă după conectarea Supabase.':
     'You can choose a service and time; confirmation becomes available after Supabase is connected.',
-  'Poți testa programarea completă cu orice număr valid și codul {code}. Datele dispar după reîncărcare.':
-    'You can test the complete booking flow with any valid phone number and code {code}. Data resets after a reload.',
+  'Poți testa programarea completă fără telefon sau cod SMS. Datele dispar după reîncărcare.':
+    'You can test the complete booking flow without a phone number or SMS code. Data resets after a reload.',
   'Ce alegi?': 'What would you like?',
   'Durata este rezervată integral pentru tine.':
     'The full duration is reserved for you.',
@@ -454,6 +466,8 @@ const english: Record<string, string> = {
   'Confirmă programarea.': 'Confirm your appointment.',
   'Numărul este folosit pentru cod și notificări despre vizită.':
     'Your number is used for the code and appointment notifications.',
+  'În modul demonstrativ nu este necesar un număr de telefon.':
+    'A phone number is not required in demo mode.',
   'Numele tău': 'Your name',
   'Cum să te trecem în programare': 'Name for the appointment',
   Telefon: 'Phone',
@@ -469,6 +483,7 @@ const english: Record<string, string> = {
   Continuă: 'Continue',
   'Verificare sesiune': 'Checking session',
   'Confirmă programarea': 'Confirm appointment',
+  'Creează programarea demo': 'Create demo appointment',
   'Verifică și confirmă': 'Verify and confirm',
   'Trimite codul': 'Send code',
   'Scrie numărul complet, cu prefixul de țară.':
@@ -481,6 +496,7 @@ const english: Record<string, string> = {
     'The code is invalid or expired. Request a new code.',
   'Cod de test: {code}. Nu se trimite niciun SMS.':
     'Test code: {code}. No SMS is sent.',
+  'Sesiune demonstrativă': 'Demo session',
   'Acces securizat': 'Secure access',
   'Vizitele tale, într-un singur loc.': 'All your appointments in one place.',
   'Folosește același număr confirmat la programare. Nu ai nevoie de parolă sau email.':

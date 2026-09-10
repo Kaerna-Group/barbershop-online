@@ -92,7 +92,7 @@ The published showcase currently runs in full mock mode so anyone can explore th
 
 | Role     | Credentials                                           |
 | -------- | ----------------------------------------------------- |
-| Customer | Any valid phone number, OTP code <code>000000</code>  |
+| Customer | No phone or OTP required; enter only a name           |
 | Owner    | <code>demo@barber.test</code> / <code>demo1234</code> |
 
 Mock data lives only in the current browser tab and resets after a reload.

@@ -311,8 +311,7 @@ class MockBackend {
     const existing = this.bookingRequests.get(input.requestId)
     if (existing) return cloneBooking(existing)
 
-    const phone = this.session?.user.phone
-    if (!phone) throw new MockBackendError('PHONE_REQUIRED')
+    const phone = this.ensureCustomerSession()
     const service = this.config.services.find(
       (item) => item.id === input.serviceId && item.active,
     )
@@ -348,7 +347,7 @@ class MockBackend {
       currency: service.currency,
       durationMinutes: service.durationMinutes,
       version: 1,
-      notificationState: 'sent',
+      notificationState: phone ? 'sent' : null,
       createdByMaster: false,
     }
     this.entries.push(booking)
@@ -357,8 +356,10 @@ class MockBackend {
   }
 
   getMyBookings() {
-    const phone = this.session?.user.phone
-    if (!phone) throw new MockBackendError('PHONE_REQUIRED')
+    if (this.session?.user.app_metadata.mock_role !== 'client') {
+      throw new MockBackendError('PHONE_REQUIRED')
+    }
+    const phone = this.session.user.phone ?? ''
     return this.entries
       .filter(
         (entry) => entry.kind === 'booking' && entry.clientPhone === phone,
@@ -558,10 +559,20 @@ class MockBackend {
   private findEditableBooking(bookingId: string, version: number) {
     const booking = this.findBooking(bookingId, version)
     const isMaster = this.isCurrentUserMaster()
-    if (!isMaster && booking.clientPhone !== this.session?.user.phone) {
+    const isClient = this.session?.user.app_metadata.mock_role === 'client'
+    const clientPhone = this.session?.user.phone ?? ''
+    if (!isMaster && (!isClient || booking.clientPhone !== clientPhone)) {
       throw new MockBackendError('NOT_OWNER')
     }
     return booking
+  }
+
+  private ensureCustomerSession() {
+    if (this.session?.user.app_metadata.mock_role !== 'client') {
+      this.session = makeSession('client', {})
+      this.emitAuth()
+    }
+    return this.session.user.phone ?? ''
   }
 
   private findBooking(bookingId: string, version: number) {

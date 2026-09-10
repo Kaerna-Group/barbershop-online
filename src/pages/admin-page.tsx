@@ -315,7 +315,9 @@ function AdminBookings({ config }: { config: PublicConfig }) {
                   </h3>
                   <p>
                     {entry.kind === 'booking'
-                      ? `${entry.serviceName} · ${entry.clientPhone}`
+                      ? [entry.serviceName, entry.clientPhone]
+                          .filter(Boolean)
+                          .join(' · ')
                       : `${formatTime(
                           entry.startsAt,
                           config.settings.timezone,

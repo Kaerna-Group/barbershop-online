@@ -26,11 +26,21 @@ additional_redirect_urls = [
 enable_signup = true
 minimum_password_length = 10
 
-[auth.sms]
+[auth.email]
 enable_signup = true
-enable_confirmations = true
-template = "Codul tău pentru programare este {{ .Code }}"
+double_confirm_changes = true
+enable_confirmations = false
 max_frequency = "60s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.email.template.magic_link]
+subject = "Codul tău pentru programare"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
 
 [functions.send-notifications]
 verify_jwt = true

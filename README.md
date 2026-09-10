@@ -4,7 +4,7 @@
   <h1>Barbershop Online</h1>
 
   <p><strong>A focused online booking experience for one independent barber.</strong></p>
-  <p>Choose a service, pick an available time, confirm by phone, and manage the appointment — without marketplace clutter.</p>
+  <p>Choose a service, pick an available time, confirm by email, and manage the appointment — without marketplace clutter.</p>
 
   <p>
     <a href="https://kaerna-group.github.io/barbershop-online/"><strong>Open the live demo</strong></a>
@@ -40,7 +40,7 @@ The interface is available in Romanian, English, and Russian. Romanian is the de
 ### Customer experience
 
 - Four-step booking flow: service → date → time → confirmation.
-- Phone verification through Supabase Auth.
+- Passwordless email OTP verification through Supabase Auth.
 - Upcoming and past appointment history.
 - Self-service rescheduling and cancellation within the configured rules.
 - Localized dates, times, prices, validation, and status messages.
@@ -62,7 +62,7 @@ The interface is available in Romanian, English, and Russian. Romanian is the de
 - Idempotency keys make repeated requests safe.
 - Row Level Security limits customers to their own appointments.
 - The owner identity is stored in protected application settings.
-- An SMS outbox supports confirmations, changes, cancellations, and reminders.
+- An email outbox supports confirmations, changes, cancellations, and reminders.
 
 ## Technology
 
@@ -92,7 +92,7 @@ The published showcase currently runs in full mock mode so anyone can explore th
 
 | Role     | Credentials                                           |
 | -------- | ----------------------------------------------------- |
-| Customer | No phone or OTP required; enter only a name           |
+| Customer | No email or OTP required; enter only a name           |
 | Owner    | <code>demo@barber.test</code> / <code>demo1234</code> |
 
 Mock data lives only in the current browser tab and resets after a reload.
@@ -113,7 +113,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 VITE_USE_MOCKS=true
 ```
 
-When <code>VITE_USE_MOCKS=true</code>, the frontend never contacts Supabase, even if the URL and publishable key are present. Set it to <code>false</code> only after the database, owner account, phone provider, and notification worker are ready.
+When <code>VITE_USE_MOCKS=true</code>, the frontend never contacts Supabase, even if the URL and publishable key are present. Set it to <code>false</code> only after the database, owner account, email provider, and notification worker are ready.
 
 ## Supabase setup
 
@@ -133,10 +133,12 @@ When <code>VITE_USE_MOCKS=true</code>, the frontend never contacts Supabase, eve
 
 4. Review and load <code>supabase/seed.sql</code>.
 5. Create the owner in Supabase Auth and assign the user's UUID to <code>app_settings.master_user_id</code>.
-6. Configure phone authentication and deploy the notification Edge Function.
+6. Configure passwordless email OTP and deploy the notification Edge Function.
 7. Follow the complete [production runbook](RUNBOOK.md) before disabling mock mode.
 
-Only the project URL and publishable key belong in the frontend. Service-role keys, SMS tokens, and worker secrets must remain server-side.
+The repository includes the six-digit OTP email template in <code>supabase/templates/magic_link.html</code>. Supabase projects using the default email service may require a custom SMTP provider before that template can be pushed.
+
+Only the project URL and publishable key belong in the frontend. Service-role keys, email-provider tokens, and worker secrets must remain server-side.
 
 ## Commands
 
@@ -173,6 +175,6 @@ GitHub Pages deep links are supported through the included SPA fallback.
 
 ## Production status
 
-The Supabase schema, migrations, RLS policies, RPCs, Auth integration, and notification function are implemented. The public deployment remains a safe showcase until real owner data, a production SMS provider, server-side secrets, and launch checks are completed.
+The Supabase schema, migrations, RLS policies, RPCs, Auth integration, and notification function are implemented. The public deployment remains a safe showcase until real owner data, a production email provider, server-side secrets, and launch checks are completed.
 
 See [RUNBOOK.md](RUNBOOK.md) for the exact production activation and recovery procedure.

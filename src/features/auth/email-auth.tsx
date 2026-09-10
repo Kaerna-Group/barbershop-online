@@ -5,35 +5,37 @@ import {
   AppError,
   isMockMode,
   mockOtpCode,
-  requestPhoneCode,
-  verifyPhoneCode,
+  requestEmailCode,
+  verifyEmailCode,
 } from '../../shared/api/barber-api'
 import { useI18n } from '../../shared/i18n-context'
 import { Button, Field, Notice } from '../../shared/ui/ui'
 
-export function PhoneAuth({
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export function EmailAuth({
   onAuthenticated,
 }: {
   onAuthenticated: (session: Session) => void
 }) {
   const { t } = useI18n()
-  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
   const send = async () => {
-    const normalized = phone.replace(/[\s()-]/g, '')
-    if (!/^\+?[1-9]\d{7,14}$/.test(normalized)) {
-      setError(t('Scrie numărul complet, cu prefixul de țară.'))
+    const normalized = email.trim().toLowerCase()
+    if (!emailPattern.test(normalized)) {
+      setError(t('Scrie o adresă de email validă.'))
       return
     }
     setBusy(true)
     setError('')
     try {
-      await requestPhoneCode(normalized)
-      setPhone(normalized)
+      await requestEmailCode(normalized)
+      setEmail(normalized)
       setSent(true)
     } catch (caught) {
       setError(
@@ -61,7 +63,7 @@ export function PhoneAuth({
     setBusy(true)
     setError('')
     try {
-      const session = await verifyPhoneCode(phone, code)
+      const session = await verifyEmailCode(email, code)
       if (!session) throw new Error('No session')
       onAuthenticated(session)
     } catch {
@@ -80,13 +82,13 @@ export function PhoneAuth({
       <h1>{t('Vizitele tale, într-un singur loc.')}</h1>
       <p className="auth-card__intro">
         {t(
-          'Folosește același număr confirmat la programare. Nu ai nevoie de parolă sau email.',
+          'Folosește aceeași adresă de email confirmată la programare. Nu ai nevoie de parolă.',
         )}
       </p>
 
       {isMockMode ? (
         <Notice tone="info">
-          {t('Cod de test: {code}. Nu se trimite niciun SMS.', {
+          {t('Cod de test: {code}. Nu se trimite niciun email.', {
             code: mockOtpCode,
           })}
         </Notice>
@@ -94,54 +96,53 @@ export function PhoneAuth({
 
       <div className="auth-card__form">
         <Field
-          label={t('Număr de telefon')}
-          autoComplete="tel"
-          inputMode="tel"
-          placeholder="+40 7xx xxx xxx"
-          value={phone}
-          onChange={(event) => setPhone(event.target.value)}
+          label={t('Adresă de email')}
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          placeholder="nume@exemplu.ro"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
           disabled={sent || busy}
         />
         {sent ? (
           <Field
-            label={t('Cod SMS')}
+            label={t('Cod din email')}
             autoComplete="one-time-code"
             inputMode="numeric"
-            maxLength={6}
             placeholder="000000"
+            maxLength={6}
             value={code}
-            onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
-            disabled={busy}
+            onChange={(event) =>
+              setCode(event.target.value.replace(/\D/g, '').slice(0, 6))
+            }
           />
         ) : null}
 
         {error ? <Notice tone="error">{error}</Notice> : null}
 
         {sent ? (
-          <>
-            <Button
-              type="button"
-              busy={busy}
-              onClick={verify}
-              icon={ArrowRight}
-            >
-              {t('Intră în cont')}
+          <div className="auth-card__actions">
+            <Button onClick={() => void verify()} disabled={busy}>
+              {busy ? t('Se verifică…') : t('Confirmă codul')}
+              <ArrowRight aria-hidden="true" />
             </Button>
-            <button
-              className="text-button"
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => {
                 setSent(false)
                 setCode('')
                 setError('')
               }}
+              disabled={busy}
             >
-              {t('Schimbă numărul')}
-            </button>
-          </>
+              {t('Schimbă adresa')}
+            </Button>
+          </div>
         ) : (
-          <Button type="button" busy={busy} onClick={send} icon={ArrowRight}>
-            {t('Trimite codul')}
+          <Button onClick={() => void send()} disabled={busy}>
+            {busy ? t('Se trimite…') : t('Trimite codul')}
+            <ArrowRight aria-hidden="true" />
           </Button>
         )}
       </div>

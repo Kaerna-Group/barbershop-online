@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PhoneAuth } from '../features/auth/phone-auth'
+import { EmailAuth } from '../features/auth/email-auth'
 import {
   cancelBooking,
   getMyBookings,
@@ -289,7 +289,7 @@ export default function MyBookingsPage() {
             </Link>
           </div>
         ) : !session ? (
-          <PhoneAuth onAuthenticated={setSession} />
+          <EmailAuth onAuthenticated={setSession} />
         ) : (
           <div className="account-content">
             <div className="account-heading">
@@ -297,7 +297,7 @@ export default function MyBookingsPage() {
                 <SectionLabel>{t('Contul meu')}</SectionLabel>
                 <h1>{t('Vizitele mele')}</h1>
                 <p>
-                  {isMockMode ? t('Sesiune demonstrativă') : session.user.phone}
+                  {isMockMode ? t('Sesiune demonstrativă') : session.user.email}
                 </p>
               </div>
               <Button

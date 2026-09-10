@@ -27,7 +27,7 @@ describe('BookingFlow', () => {
     ).toBeInTheDocument()
   })
 
-  it('creates a mock booking without a phone number or OTP', async () => {
+  it('creates a mock booking without an email address or OTP', async () => {
     const user = userEvent.setup()
     render(
       <MemoryRouter>
@@ -36,7 +36,7 @@ describe('BookingFlow', () => {
     )
 
     expect(screen.getByText(/Mod demonstrativ/i)).toBeInTheDocument()
-    expect(screen.getByText(/fără telefon sau cod SMS/i)).toBeInTheDocument()
+    expect(screen.getByText(/fără email sau cod/i)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Continuă/i }))
     const futureWeekday = screen
@@ -55,7 +55,7 @@ describe('BookingFlow', () => {
     await user.click(screen.getByRole('button', { name: /Continuă/i }))
 
     expect(
-      screen.queryByRole('textbox', { name: /Telefon/i }),
+      screen.queryByRole('textbox', { name: /Adresă de email/i }),
     ).not.toBeInTheDocument()
     await user.type(
       screen.getByRole('textbox', { name: /Numele tău/i }),

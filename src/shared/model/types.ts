@@ -14,8 +14,6 @@ export type Service = {
 export type MasterProfile = {
   name: string
   shortIntro: string
-  phoneDisplay: string
-  phoneHref: string | null
   email: string | null
   addressLine: string
   venueLabel: string | null
@@ -52,7 +50,7 @@ export type Booking = {
   endsAt: string
   status: BookingStatus
   clientName: string
-  clientPhone: string
+  clientEmail: string
   serviceName: string
   priceMinor: number
   currency: string
@@ -83,7 +81,7 @@ export type BookingDraft = {
   date: string
   startsAt: string
   clientName: string
-  phone: string
+  email: string
 }
 
 export type ApiResult<T> =

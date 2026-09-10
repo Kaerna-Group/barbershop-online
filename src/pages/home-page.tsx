@@ -1,10 +1,4 @@
-import {
-  CalendarCheck2,
-  Clock3,
-  MapPin,
-  Phone,
-  ShieldCheck,
-} from 'lucide-react'
+import { CalendarCheck2, Clock3, Mail, MapPin, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BookingFlow } from '../features/booking/booking-flow'
@@ -61,8 +55,8 @@ export default function HomePage() {
             <p className="booking-hero__lead">
               {t(
                 isMockMode
-                  ? 'Alegi serviciul, ziua și ora. În modul demonstrativ nu ai nevoie de telefon.'
-                  : 'Alegi serviciul, ziua și ora. Confirmi telefonul, iar locul este rezervat.',
+                  ? 'Alegi serviciul, ziua și ora. În modul demonstrativ nu ai nevoie de email.'
+                  : 'Alegi serviciul, ziua și ora. Confirmi adresa de email, iar locul este rezervat.',
               )}
             </p>
 
@@ -146,14 +140,14 @@ export default function HomePage() {
               <article>
                 <span>03</span>
                 <h3>{t('Contact')}</h3>
-                {config.profile.phoneHref ? (
-                  <a href={`tel:${config.profile.phoneHref}`}>
-                    <Phone aria-hidden="true" /> {config.profile.phoneDisplay}
+                {config.profile.email ? (
+                  <a href={`mailto:${config.profile.email}`}>
+                    <Mail aria-hidden="true" /> {config.profile.email}
                   </a>
                 ) : (
-                  <p>{config.profile.phoneDisplay}</p>
+                  <p>{t('Email indisponibil momentan.')}</p>
                 )}
-                <small>{t('Scrie sau sună dacă întârzii.')}</small>
+                <small>{t('Scrie-ne dacă întârzii.')}</small>
               </article>
             </div>
             <div className="privacy-note">

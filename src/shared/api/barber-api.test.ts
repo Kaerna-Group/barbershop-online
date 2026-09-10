@@ -16,11 +16,11 @@ import {
   isMockMode,
   mockMasterCredentials,
   mockOtpCode,
-  requestPhoneCode,
+  requestEmailCode,
   resetMockBackend,
   rescheduleBooking,
   signInMaster,
-  verifyPhoneCode,
+  verifyEmailCode,
 } from './barber-api'
 import { addDaysToDateInput, todayInTimeZone } from '../lib/format'
 import type { Service } from '../model/types'
@@ -37,7 +37,7 @@ async function findBookableDay(service: Service, startOffset: number) {
 describe('mock barber API', () => {
   beforeEach(() => resetMockBackend())
 
-  it('creates and owns a demo booking without phone verification', async () => {
+  it('creates and owns a demo booking without email verification', async () => {
     expect(await getSession()).toBeNull()
     const config = await getPublicConfig()
     const service = config.services[0]
@@ -56,23 +56,23 @@ describe('mock barber API', () => {
       requestId: 'anonymous-mock-request',
     })
 
-    expect(booking.clientPhone).toBe('')
-    expect((await getSession())?.user.phone).toBeUndefined()
+    expect(booking.clientEmail).toBe('')
+    expect((await getSession())?.user.email).toBeUndefined()
     expect((await getMyBookings()).map((item) => item.id)).toContain(booking.id)
   })
 
-  it('completes phone verification, booking, rescheduling and cancellation', async () => {
+  it('completes email verification, booking, rescheduling and cancellation', async () => {
     expect(isMockMode).toBe(true)
-    const phone = '+40700123456'
-    await requestPhoneCode(phone)
-    await expect(verifyPhoneCode(phone, '123456')).rejects.toMatchObject({
+    const email = 'client@example.com'
+    await requestEmailCode(email)
+    await expect(verifyEmailCode(email, '123456')).rejects.toMatchObject({
       code: 'INVALID_OTP',
     })
 
-    const session = await verifyPhoneCode(phone, mockOtpCode)
+    const session = await verifyEmailCode(email, mockOtpCode)
     expect(session).not.toBeNull()
     if (!session) return
-    expect(session.user.phone).toBe(phone)
+    expect(session.user.email).toBe(email)
 
     const config = await getPublicConfig()
     const service = config.services[0]
@@ -137,7 +137,7 @@ describe('mock barber API', () => {
       serviceId: service.id,
       startsAt: slot.startsAt,
       clientName: 'Programare manuală',
-      clientPhone: '+40700999888',
+      clientEmail: 'manual@example.com',
       requestId: 'mock-admin-request-1',
     })
     const completed = await adminSetBookingStatus(

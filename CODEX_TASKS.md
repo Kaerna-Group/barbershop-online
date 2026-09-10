@@ -4,7 +4,7 @@
 
 - [x] React, Vite, Tailwind CSS foundation and application routes
 - [x] Responsive booking flow without photography
-- [x] Customer phone sign-in and verification
+- [x] Customer passwordless email sign-in and verification
 - [x] Upcoming appointments, history, rescheduling, and cancellation
 - [x] Owner dashboard and manual appointments
 - [x] Weekly schedule, date exceptions, and unavailable-time blocks
@@ -26,9 +26,9 @@
 ## Required before accepting real appointments
 
 - [ ] Create the production owner in Supabase Auth and store the user's UUID
-- [ ] Replace the placeholder name, address, phone, services, prices, and schedule
-- [ ] Connect an SMS provider for phone OTP delivery
-- [ ] Configure the SMS notification webhook, server-side secrets, and Cron worker
+- [ ] Replace the placeholder name, address, public email, services, prices, and schedule
+- [ ] Connect production SMTP for email OTP delivery
+- [ ] Configure the email notification webhook, server-side secrets, and Cron worker
 - [ ] Validate concurrent booking behavior against the staging database
 - [ ] Test backup restoration in a separate Supabase project
 - [ ] Complete the production checklist in <code>RUNBOOK.md</code>

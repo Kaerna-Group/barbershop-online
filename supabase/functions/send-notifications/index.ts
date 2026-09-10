@@ -13,7 +13,7 @@ type Booking = {
   status: string
   version: number
   client_name: string
-  client_phone: string
+  client_email: string
   service_name: string
   starts_at: string
   price_minor: number
@@ -49,6 +49,13 @@ function messageFor(job: Job, booking: Booking, timezone: string) {
   return `Programare confirmată: ${booking.service_name}, ${date}. Total la locație: ${money}.`
 }
 
+function subjectFor(job: Job) {
+  if (job.event_type === 'cancellation') return 'Programare anulată'
+  if (job.event_type === 'reschedule') return 'Programare reprogramată'
+  if (job.event_type === 'reminder') return 'Reamintire programare'
+  return 'Programare confirmată'
+}
+
 Deno.serve(async (request) => {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'method_not_allowed' }), {
@@ -70,9 +77,9 @@ Deno.serve(async (request) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const smsUrl = Deno.env.get('SMS_WEBHOOK_URL')
-  const smsToken = Deno.env.get('SMS_WEBHOOK_TOKEN')
-  if (!supabaseUrl || !serviceRoleKey || !smsUrl || !smsToken) {
+  const emailUrl = Deno.env.get('EMAIL_WEBHOOK_URL')
+  const emailToken = Deno.env.get('EMAIL_WEBHOOK_TOKEN')
+  if (!supabaseUrl || !serviceRoleKey || !emailUrl || !emailToken) {
     return new Response(JSON.stringify({ error: 'worker_not_configured' }), {
       status: 503,
       headers: jsonHeaders,
@@ -106,7 +113,7 @@ Deno.serve(async (request) => {
     const { data: booking, error: bookingError } = await client
       .from('calendar_entries')
       .select(
-        'id,status,version,client_name,client_phone,service_name,starts_at,price_minor,currency',
+        'id,status,version,client_name,client_email,service_name,starts_at,price_minor,currency',
       )
       .eq('id', job.calendar_entry_id)
       .maybeSingle<Booking>()
@@ -128,15 +135,16 @@ Deno.serve(async (request) => {
     }
 
     try {
-      const response = await fetch(smsUrl, {
+      const response = await fetch(emailUrl, {
         method: 'POST',
         headers: {
           ...jsonHeaders,
-          authorization: `Bearer ${smsToken}`,
+          authorization: `Bearer ${emailToken}`,
         },
         body: JSON.stringify({
-          to: booking.client_phone,
-          message: messageFor(job, booking, timezone),
+          to: booking.client_email,
+          subject: subjectFor(job),
+          text: messageFor(job, booking, timezone),
           idempotencyKey: job.id,
         }),
       })

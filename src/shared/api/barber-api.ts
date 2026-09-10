@@ -79,7 +79,7 @@ function normalizeBooking(value: unknown): Booking {
     endsAt: stringValue(item.ends_at ?? item.endsAt),
     status: stringValue(item.status, 'confirmed') as Booking['status'],
     clientName: stringValue(item.client_name ?? item.clientName),
-    clientPhone: stringValue(item.client_phone ?? item.clientPhone),
+    clientEmail: stringValue(item.client_email ?? item.clientEmail),
     serviceName: stringValue(item.service_name ?? item.serviceName),
     priceMinor: numberValue(item.price_minor ?? item.priceMinor),
     currency: stringValue(item.currency, 'RON'),
@@ -134,9 +134,6 @@ export async function getPublicConfig(): Promise<PublicConfig> {
         profile.short_intro,
         fallbackConfig.profile.shortIntro,
       ),
-      phoneDisplay: stringValue(profile.phone_display),
-      phoneHref:
-        typeof profile.phone_href === 'string' ? profile.phone_href : null,
       email: typeof profile.email === 'string' ? profile.email : null,
       addressLine: stringValue(profile.address_line),
       venueLabel:
@@ -179,24 +176,24 @@ export async function getAvailableSlots(
   }))
 }
 
-export async function requestPhoneCode(phone: string) {
-  if (isMockMode) return runMock(() => mockBackend.requestPhoneCode(phone))
+export async function requestEmailCode(email: string) {
+  if (isMockMode) return runMock(() => mockBackend.requestEmailCode(email))
   const client = requireSupabase()
   const { error } = await client.auth.signInWithOtp({
-    phone,
+    email,
     options: { shouldCreateUser: true },
   })
   throwApiError(error)
 }
 
-export async function verifyPhoneCode(phone: string, token: string) {
+export async function verifyEmailCode(email: string, token: string) {
   if (isMockMode)
-    return runMock(() => mockBackend.verifyPhoneCode(phone, token))
+    return runMock(() => mockBackend.verifyEmailCode(email, token))
   const client = requireSupabase()
   const { data, error } = await client.auth.verifyOtp({
-    phone,
+    email,
     token,
-    type: 'sms',
+    type: 'email',
   })
   throwApiError(error)
   return data.session
@@ -279,7 +276,7 @@ export async function getMyBookings() {
   const { data, error } = await client
     .from('calendar_entries')
     .select(
-      'id,service_id,starts_at,ends_at,status,client_name,client_phone,service_name,price_minor,currency,duration_minutes,version,created_by_master',
+      'id,service_id,starts_at,ends_at,status,client_name,client_email,service_name,price_minor,currency,duration_minutes,version,created_by_master',
     )
     .eq('kind', 'booking')
     .order('starts_at', { ascending: false })
@@ -442,7 +439,7 @@ export async function adminCreateBooking(input: {
   serviceId: string
   startsAt: string
   clientName: string
-  clientPhone: string
+  clientEmail: string
   requestId: string
 }) {
   if (isMockMode) {
@@ -451,7 +448,7 @@ export async function adminCreateBooking(input: {
   const client = requireSupabase()
   const { data, error } = await client.rpc('admin_create_booking', {
     p_client_name: input.clientName,
-    p_client_phone: input.clientPhone,
+    p_client_email: input.clientEmail,
     p_request_id: input.requestId,
     p_service_id: input.serviceId,
     p_start_at: input.startsAt,
@@ -509,8 +506,6 @@ export async function adminSavePublicProfile(input: PublicConfig['profile']) {
     p_address_line: input.addressLine,
     p_email: input.email || null,
     p_name: input.name,
-    p_phone_display: input.phoneDisplay,
-    p_phone_href: input.phoneHref || null,
     p_short_intro: input.shortIntro,
     p_venue_label: input.venueLabel || null,
   })

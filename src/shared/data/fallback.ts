@@ -5,9 +5,7 @@ export const fallbackConfig: PublicConfig = {
   profile: {
     name: 'Programare la frizer',
     shortIntro: 'Un singur client, timpul rezervat doar pentru tine.',
-    phoneDisplay: '+40 000 000 000',
-    phoneHref: null,
-    email: null,
+    email: 'programare@barber.test',
     addressLine: 'Adresa va fi completată înainte de lansare',
     venueLabel: null,
   },

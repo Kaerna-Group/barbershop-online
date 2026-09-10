@@ -22,7 +22,7 @@ This product provides appointment booking for one barber at one address. Do not 
 - Store prices in minor currency units.
 - Mutations must expose explicit loading, error, and success states.
 - New interactive elements must support keyboard use and have an accessible name.
-- Never write phone numbers, OTP codes, tokens, or secrets to logs.
+- Never write customer email addresses, OTP codes, tokens, or secrets to logs.
 - Do not use <code>localStorage</code> as the customer-data store.
 
 Run <code>npm run check</code> before making changes. After changes, rerun every check relevant to the affected code.

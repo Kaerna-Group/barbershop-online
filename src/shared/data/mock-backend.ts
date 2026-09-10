@@ -115,7 +115,7 @@ function overlaps(startsAt: string, endsAt: string, entry: CalendarEntry) {
 
 function makeSession(
   role: 'client' | 'master',
-  identity: { phone?: string; email?: string },
+  identity: { email?: string },
 ): Session {
   const createdAt = new Date().toISOString()
   const user: User = {
@@ -132,7 +132,6 @@ function makeSession(
     aud: 'authenticated',
     created_at: createdAt,
     role: 'authenticated',
-    phone: identity.phone,
     email: identity.email,
     identities: [],
   }
@@ -167,7 +166,7 @@ function initialEntries(config: PublicConfig): CalendarEntry[] {
       endsAt: addMinutes(bookingStart, service.durationMinutes),
       status: 'confirmed',
       clientName: 'Client demonstrativ',
-      clientPhone: '+40 ••• ••• 112',
+      clientEmail: 'client.demo@example.com',
       serviceName: service.name,
       priceMinor: service.priceMinor,
       currency: service.currency,
@@ -184,7 +183,7 @@ function initialEntries(config: PublicConfig): CalendarEntry[] {
       endsAt: addMinutes(blockStart, 30),
       status: 'confirmed',
       clientName: '',
-      clientPhone: '',
+      clientEmail: '',
       serviceName: 'Pauză',
       priceMinor: 0,
       currency: config.settings.currency,
@@ -203,7 +202,7 @@ class MockBackend {
   private scheduleOverrides = new Map<string, ScheduleOverride>()
   private entries = initialEntries(this.config)
   private session: Session | null = null
-  private pendingPhone: string | null = null
+  private pendingEmail: string | null = null
   private readonly listeners = new Set<AuthListener>()
   private readonly bookingRequests = new Map<string, Booking>()
 
@@ -213,7 +212,7 @@ class MockBackend {
     this.scheduleOverrides.clear()
     this.entries = initialEntries(this.config)
     this.session = null
-    this.pendingPhone = null
+    this.pendingEmail = null
     this.bookingRequests.clear()
     this.emitAuth()
   }
@@ -258,16 +257,16 @@ class MockBackend {
     return slots
   }
 
-  requestPhoneCode(phone: string) {
-    this.pendingPhone = phone
+  requestEmailCode(email: string) {
+    this.pendingEmail = email
   }
 
-  verifyPhoneCode(phone: string, token: string) {
-    if (this.pendingPhone !== phone || token !== mockOtpCode) {
+  verifyEmailCode(email: string, token: string) {
+    if (this.pendingEmail !== email || token !== mockOtpCode) {
       throw new MockBackendError('INVALID_OTP')
     }
-    this.session = makeSession('client', { phone })
-    this.pendingPhone = null
+    this.session = makeSession('client', { email })
+    this.pendingEmail = null
     this.emitAuth()
     return this.session
   }
@@ -311,7 +310,7 @@ class MockBackend {
     const existing = this.bookingRequests.get(input.requestId)
     if (existing) return cloneBooking(existing)
 
-    const phone = this.ensureCustomerSession()
+    const email = this.ensureCustomerSession()
     const service = this.config.services.find(
       (item) => item.id === input.serviceId && item.active,
     )
@@ -325,7 +324,7 @@ class MockBackend {
     const futureCount = this.entries.filter(
       (entry) =>
         entry.kind === 'booking' &&
-        entry.clientPhone === phone &&
+        entry.clientEmail === email &&
         entry.status === 'confirmed' &&
         new Date(entry.endsAt).getTime() >= Date.now(),
     ).length
@@ -341,13 +340,13 @@ class MockBackend {
       endsAt: slot.endsAt,
       status: 'confirmed',
       clientName: input.clientName,
-      clientPhone: phone,
+      clientEmail: email,
       serviceName: service.name,
       priceMinor: service.priceMinor,
       currency: service.currency,
       durationMinutes: service.durationMinutes,
       version: 1,
-      notificationState: phone ? 'sent' : null,
+      notificationState: email ? 'sent' : null,
       createdByMaster: false,
     }
     this.entries.push(booking)
@@ -357,12 +356,12 @@ class MockBackend {
 
   getMyBookings() {
     if (this.session?.user.app_metadata.mock_role !== 'client') {
-      throw new MockBackendError('PHONE_REQUIRED')
+      throw new MockBackendError('EMAIL_REQUIRED')
     }
-    const phone = this.session.user.phone ?? ''
+    const email = this.session.user.email ?? ''
     return this.entries
       .filter(
-        (entry) => entry.kind === 'booking' && entry.clientPhone === phone,
+        (entry) => entry.kind === 'booking' && entry.clientEmail === email,
       )
       .map(cloneBooking)
   }
@@ -465,7 +464,7 @@ class MockBackend {
       endsAt,
       status: 'confirmed',
       clientName: '',
-      clientPhone: '',
+      clientEmail: '',
       serviceName: 'Blocat',
       priceMinor: 0,
       currency: this.config.settings.currency,
@@ -483,7 +482,7 @@ class MockBackend {
     serviceId: string
     startsAt: string
     clientName: string
-    clientPhone: string
+    clientEmail: string
   }) {
     this.assertMaster()
     const service = this.config.services.find(
@@ -503,7 +502,7 @@ class MockBackend {
       endsAt: slot.endsAt,
       status: 'confirmed',
       clientName: input.clientName,
-      clientPhone: input.clientPhone,
+      clientEmail: input.clientEmail,
       serviceName: service.name,
       priceMinor: service.priceMinor,
       currency: service.currency,
@@ -560,8 +559,8 @@ class MockBackend {
     const booking = this.findBooking(bookingId, version)
     const isMaster = this.isCurrentUserMaster()
     const isClient = this.session?.user.app_metadata.mock_role === 'client'
-    const clientPhone = this.session?.user.phone ?? ''
-    if (!isMaster && (!isClient || booking.clientPhone !== clientPhone)) {
+    const clientEmail = this.session?.user.email ?? ''
+    if (!isMaster && (!isClient || booking.clientEmail !== clientEmail)) {
       throw new MockBackendError('NOT_OWNER')
     }
     return booking
@@ -572,7 +571,7 @@ class MockBackend {
       this.session = makeSession('client', {})
       this.emitAuth()
     }
-    return this.session.user.phone ?? ''
+    return this.session.user.email ?? ''
   }
 
   private findBooking(bookingId: string, version: number) {

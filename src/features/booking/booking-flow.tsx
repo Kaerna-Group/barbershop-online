@@ -14,8 +14,8 @@ import {
   getAvailableSlots,
   getSession,
   isMockMode,
-  requestPhoneCode,
-  verifyPhoneCode,
+  requestEmailCode,
+  verifyEmailCode,
 } from '../../shared/api/barber-api'
 import {
   addDaysToDateInput,
@@ -67,7 +67,7 @@ function readableError(error: unknown, t: Translate) {
       TOO_EARLY:
         'Această oră este prea apropiată. Alege un interval mai târziu.',
       BOOKING_LIMIT: 'Ai deja numărul maxim de programări viitoare.',
-      PHONE_REQUIRED: 'Confirmă numărul de telefon pentru a continua.',
+      EMAIL_REQUIRED: 'Confirmă adresa de email pentru a continua.',
     }
     return t(
       messages[error.code] ??
@@ -91,9 +91,9 @@ export function BookingFlow({ config }: BookingFlowProps) {
   const [slots, setSlots] = useState<TimeSlot[]>([])
   const [startsAt, setStartsAt] = useState('')
   const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
-  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null)
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null)
   const [authKnown, setAuthKnown] = useState(false)
   const [codeSent, setCodeSent] = useState(false)
   const [loadingSlots, setLoadingSlots] = useState(false)
@@ -114,9 +114,9 @@ export function BookingFlow({ config }: BookingFlowProps) {
     getSession()
       .then((session) => {
         if (!alive) return
-        if (session?.user.phone) {
-          setVerifiedPhone(session.user.phone)
-          setPhone(session.user.phone)
+        if (session?.user.email) {
+          setVerifiedEmail(session.user.email)
+          setEmail(session.user.email)
         }
       })
       .catch(() => undefined)
@@ -157,18 +157,16 @@ export function BookingFlow({ config }: BookingFlowProps) {
   }
 
   const sendCode = async () => {
-    const normalized = phone.replace(/[\s()-]/g, '')
-    if (!/^\+?[1-9]\d{7,14}$/.test(normalized)) {
-      setError(
-        t('Scrie numărul complet, inclusiv prefixul de țară, de exemplu +40.'),
-      )
+    const normalized = email.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+      setError(t('Scrie o adresă de email validă.'))
       return
     }
     setBusy(true)
     setError('')
     try {
-      await requestPhoneCode(normalized)
-      setPhone(normalized)
+      await requestEmailCode(normalized)
+      setEmail(normalized)
       setCodeSent(true)
     } catch (caught) {
       setError(readableError(caught, t))
@@ -211,8 +209,8 @@ export function BookingFlow({ config }: BookingFlowProps) {
     setBusy(true)
     setError('')
     try {
-      const session = await verifyPhoneCode(phone, otp)
-      setVerifiedPhone(session?.user.phone ?? phone)
+      const session = await verifyEmailCode(email, otp)
+      setVerifiedEmail(session?.user.email ?? email)
       await saveBooking()
     } catch (caught) {
       setError(readableError(caught, t))
@@ -257,10 +255,10 @@ export function BookingFlow({ config }: BookingFlowProps) {
         <p className="muted">
           {isMockMode
             ? t(
-                'Programarea demonstrativă a fost salvată. Nu se trimite niciun SMS.',
+                'Programarea demonstrativă a fost salvată. Nu se trimite niciun email.',
               )
-            : t('Confirmarea este trimisă la {phone}.', {
-                phone: verifiedPhone ?? phone,
+            : t('Confirmarea este trimisă la {email}.', {
+                email: verifiedEmail ?? email,
               })}
         </p>
         <Link className="button button--primary" to="/my-bookings">
@@ -309,7 +307,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
         <Notice tone="warning">
           <strong>{t('Mod demonstrativ.')}</strong>{' '}
           {t(
-            'Poți testa programarea completă fără telefon sau cod SMS. Datele dispar după reîncărcare.',
+            'Poți testa programarea completă fără email sau cod. Datele dispar după reîncărcare.',
           )}
         </Notice>
       ) : null}
@@ -484,8 +482,8 @@ export function BookingFlow({ config }: BookingFlowProps) {
                 <p>
                   {t(
                     isMockMode
-                      ? 'În modul demonstrativ nu este necesar un număr de telefon.'
-                      : 'Numărul este folosit pentru cod și notificări despre vizită.',
+                      ? 'În modul demonstrativ nu este necesară o adresă de email.'
+                      : 'Adresa de email este folosită pentru cod și notificări despre vizită.',
                   )}
                 </p>
               </div>
@@ -503,22 +501,23 @@ export function BookingFlow({ config }: BookingFlowProps) {
                 />
 
                 {!isMockMode ? (
-                  !verifiedPhone ? (
+                  !verifiedEmail ? (
                     <>
                       <Field
-                        label={t('Telefon')}
-                        autoComplete="tel"
-                        inputMode="tel"
-                        value={phone}
-                        onChange={(event) => setPhone(event.target.value)}
-                        placeholder="+40 7xx xxx xxx"
+                        label={t('Adresă de email')}
+                        type="email"
+                        autoComplete="email"
+                        inputMode="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="nume@exemplu.ro"
                         disabled={busy || codeSent}
-                        hint={t('Include prefixul de țară.')}
+                        hint={t('Vei primi un cod de confirmare pe email.')}
                       />
                       {codeSent ? (
                         <div className="otp-row">
                           <Field
-                            label={t('Codul SMS')}
+                            label={t('Cod din email')}
                             autoComplete="one-time-code"
                             inputMode="numeric"
                             maxLength={6}
@@ -537,14 +536,14 @@ export function BookingFlow({ config }: BookingFlowProps) {
                               setOtp('')
                             }}
                           >
-                            {t('Schimbă numărul')}
+                            {t('Schimbă adresa')}
                           </button>
                         </div>
                       ) : null}
                     </>
                   ) : (
                     <Notice tone="success">
-                      <strong>{t('Telefon confirmat:')}</strong> {verifiedPhone}
+                      <strong>{t('Email confirmat:')}</strong> {verifiedEmail}
                     </Notice>
                   )
                 ) : null}
@@ -630,7 +629,7 @@ export function BookingFlow({ config }: BookingFlowProps) {
           <Button busy disabled>
             {t('Verificare sesiune')}
           </Button>
-        ) : verifiedPhone ? (
+        ) : verifiedEmail ? (
           <Button
             type="button"
             busy={busy}

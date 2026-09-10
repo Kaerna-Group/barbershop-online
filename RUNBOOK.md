@@ -21,7 +21,7 @@ Review <code>supabase/seed.sql</code> before loading it through the SQL Editor. 
 Security rules:
 
 - expose only the project URL and publishable/anon key to the frontend;
-- never commit the service-role key, CLI access token, SMS token, or worker secret;
+- never commit the service-role key, CLI access token, email-provider token, or worker secret;
 - use separate credentials and secrets for testing and production.
 
 ## 2. Replace showcase data
@@ -29,7 +29,7 @@ Security rules:
 Before accepting real appointments, replace every placeholder through the owner dashboard or reviewed SQL:
 
 - barber name;
-- phone number and single Romanian address;
+- public email and single Romanian address;
 - optional venue name;
 - services, durations, and prices in RON;
 - weekly working hours;
@@ -58,28 +58,32 @@ Verify that exactly one user is treated as the owner and that an ordinary custom
 
 Do not expose owner registration. Password recovery must target only the verified owner email.
 
-## 4. Configure customer phone authentication
+## 4. Configure customer email authentication
 
 In Supabase Auth:
 
-1. Enable the Phone provider.
-2. Connect a supported SMS provider.
-3. Add the allowed redirect URLs:
+1. Enable email sign-ups and passwordless email authentication.
+2. Edit the **Magic Link** email template so the message contains <code>{{ .Token }}</code>; the frontend verifies this six-digit code as an email OTP.
+3. Connect a production SMTP provider before accepting real appointments.
+4. Add the allowed redirect URLs:
    - local: <code>http://localhost:5173/**</code>
    - production: <code>https://kaerna-group.github.io/barbershop-online/**</code>
-4. Keep the OTP resend interval at 60 seconds or longer.
-5. Test sign-in, sign-out, session restoration, and an expired code with a real Romanian phone number in the test project.
+5. Keep the OTP resend interval at 60 seconds or longer and the expiry at 60 minutes or less.
+6. Test sign-in, sign-out, session restoration, and an expired code with a real email address in the test project.
 
-Never log phone numbers, OTP codes, access tokens, or session contents.
+The versioned template is stored at <code>supabase/templates/magic_link.html</code>. If Supabase rejects template customization on the current plan, configure custom SMTP first and then run <code>npx supabase config push</code> again.
+
+Never log customer email addresses, OTP codes, access tokens, or session contents.
 
 ## 5. Deploy appointment notifications
 
-The <code>send-notifications</code> Edge Function calls a generic HTTPS SMS endpoint with:
+The <code>send-notifications</code> Edge Function calls a generic HTTPS email endpoint with:
 
 ```json
 {
-  "to": "+40700000000",
-  "message": "Programare confirmată…",
+  "to": "client@example.com",
+  "subject": "Programare confirmată",
+  "text": "Programare confirmată…",
   "idempotencyKey": "notification-job-uuid"
 }
 ```
@@ -87,8 +91,8 @@ The <code>send-notifications</code> Edge Function calls a generic HTTPS SMS endp
 Set the production secrets and deploy the function:
 
 ```bash
-npx supabase secrets set SMS_WEBHOOK_URL=https://provider.example/send
-npx supabase secrets set SMS_WEBHOOK_TOKEN=replace-with-provider-token
+npx supabase secrets set EMAIL_WEBHOOK_URL=https://provider.example/send
+npx supabase secrets set EMAIL_WEBHOOK_TOKEN=replace-with-provider-token
 npx supabase secrets set NOTIFICATION_WORKER_SECRET=replace-with-a-long-random-value
 npx supabase functions deploy send-notifications
 ```
@@ -100,7 +104,7 @@ Create a Supabase Cron job that invokes the function once per minute. Send both 
 
 Store both values in Supabase Vault or protected scheduler configuration. Do not place them in a migration or repository file.
 
-An SMS failure must not delete or roll back an appointment. Notification jobs retry with increasing delay for up to five attempts.
+An email delivery failure must not delete or roll back an appointment. Notification jobs retry with increasing delay for up to five attempts.
 
 ## 6. Configure GitHub Pages
 
@@ -147,7 +151,7 @@ Before launch, also verify:
 
 - the real address, services, prices, and schedule;
 - the owner email recovery flow;
-- SMS delivery, retry behavior, and provider limits;
+- email OTP and appointment-email delivery, retry behavior, and provider limits;
 - RLS policies with customer and owner accounts;
 - browser console and server logs contain no personal data or secrets;
 - <code>VITE_USE_MOCKS=false</code> is present in the deployed build.
@@ -162,7 +166,7 @@ Test restoration in a separate Supabase project first:
 2. restore the database;
 3. verify migrations, RLS, RPCs, and appointment counts;
 4. test customer and owner access;
-5. enable outbound SMS only after data validation succeeds.
+5. enable outbound email only after data validation succeeds.
 
 Keep a documented recovery owner, backup location, retention period, and last successful restore-test date.
 

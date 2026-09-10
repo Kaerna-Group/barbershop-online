@@ -17,10 +17,10 @@ const russian: Record<string, string> = {
   'Programare individuală': 'Индивидуальная запись',
   'Ora ta.': 'Твоё время.',
   'Fără așteptare.': 'Без ожидания.',
-  'Alegi serviciul, ziua și ora. Confirmi telefonul, iar locul este rezervat.':
-    'Выбираешь услугу, день и время. Подтверждаешь телефон — место забронировано.',
-  'Alegi serviciul, ziua și ora. În modul demonstrativ nu ai nevoie de telefon.':
-    'Выбираешь услугу, день и время. В деморежиме телефон не нужен.',
+  'Alegi serviciul, ziua și ora. Confirmi adresa de email, iar locul este rezervat.':
+    'Выбираешь услугу, день и время. Подтверждаешь email — место забронировано.',
+  'Alegi serviciul, ziua și ora. În modul demonstrativ nu ai nevoie de email.':
+    'Выбираешь услугу, день и время. В деморежиме email не нужен.',
   'Un singur client': 'Один клиент',
   'Timpul nu se împarte între programări.':
     'Время полностью отведено одной записи.',
@@ -53,24 +53,24 @@ const russian: Record<string, string> = {
     'До этого времени осталось слишком мало. Выбери более поздний интервал.',
   'Ai deja numărul maxim de programări viitoare.':
     'У тебя уже максимальное число будущих записей.',
-  'Confirmă numărul de telefon pentru a continua.':
-    'Подтверди номер телефона, чтобы продолжить.',
+  'Confirmă adresa de email pentru a continua.':
+    'Подтверди адрес электронной почты, чтобы продолжить.',
   'Nu am putut finaliza cererea. Verifică datele și încearcă din nou.':
     'Не удалось выполнить запрос. Проверь данные и попробуй снова.',
   'A apărut o problemă temporară. Încearcă din nou.':
     'Возникла временная ошибка. Попробуй снова.',
-  'Scrie numărul complet, inclusiv prefixul de țară, de exemplu +40.':
-    'Введи полный номер с кодом страны, например +40.',
+  'Scrie o adresă de email validă.':
+    'Введи корректный адрес электронной почты.',
   'Completează numele și păstrează ora selectată.':
     'Укажи имя и сохрани выбранное время.',
   'Codul conține 6 cifre.': 'Код состоит из 6 цифр.',
   'Programare confirmată': 'Запись подтверждена',
   'Ne vedem {date}.': 'До встречи: {date}.',
   Preț: 'Цена',
-  'Confirmarea este trimisă la {phone}.':
-    'Подтверждение отправлено на {phone}.',
-  'Programarea demonstrativă a fost salvată. Nu se trimite niciun SMS.':
-    'Тестовая запись сохранена. SMS не отправляется.',
+  'Confirmarea este trimisă la {email}.':
+    'Подтверждение отправлено на {email}.',
+  'Programarea demonstrativă a fost salvată. Nu se trimite niciun email.':
+    'Тестовая запись сохранена. Письмо не отправляется.',
   'Vezi vizitele mele': 'Посмотреть мои визиты',
   'Nu există încă servicii active. Frizerul trebuie să adauge cel puțin unul în setări.':
     'Активных услуг пока нет. Парикмахеру нужно добавить хотя бы одну в настройках.',
@@ -84,8 +84,8 @@ const russian: Record<string, string> = {
   'Mod demonstrativ.': 'Деморежим.',
   'Poți parcurge alegerea serviciului și a orei; confirmarea devine activă după conectarea Supabase.':
     'Можно выбрать услугу и время; подтверждение заработает после подключения Supabase.',
-  'Poți testa programarea completă fără telefon sau cod SMS. Datele dispar după reîncărcare.':
-    'Можно полностью проверить запись без телефона и SMS-кода. После перезагрузки данные сбросятся.',
+  'Poți testa programarea completă fără email sau cod. Datele dispar după reîncărcare.':
+    'Можно полностью проверить запись без email и кода. После перезагрузки данные сбросятся.',
   'Ce alegi?': 'Что выбираешь?',
   'Durata este rezervată integral pentru tine.':
     'Вся продолжительность зарезервирована для тебя.',
@@ -102,17 +102,18 @@ const russian: Record<string, string> = {
     'Выбери другую дату, чтобы продолжить.',
   'Schimbă data': 'Изменить дату',
   'Confirmă programarea.': 'Подтверди запись.',
-  'Numărul este folosit pentru cod și notificări despre vizită.':
-    'Номер используется для кода и уведомлений о визите.',
-  'În modul demonstrativ nu este necesar un număr de telefon.':
-    'В деморежиме номер телефона не нужен.',
+  'Adresa de email este folosită pentru cod și notificări despre vizită.':
+    'Адрес электронной почты используется для кода и уведомлений о визите.',
+  'În modul demonstrativ nu este necesară o adresă de email.':
+    'В деморежиме адрес электронной почты не нужен.',
   'Numele tău': 'Твоё имя',
   'Cum să te trecem în programare': 'Как указать тебя в записи',
-  Telefon: 'Телефон',
-  'Include prefixul de țară.': 'Укажи код страны.',
-  'Codul SMS': 'Код из SMS',
-  'Schimbă numărul': 'Изменить номер',
-  'Telefon confirmat:': 'Телефон подтверждён:',
+  'Adresă de email': 'Адрес электронной почты',
+  'Vei primi un cod de confirmare pe email.':
+    'Ты получишь код подтверждения на электронную почту.',
+  'Cod din email': 'Код из письма',
+  'Schimbă adresa': 'Изменить адрес',
+  'Email confirmat:': 'Email подтверждён:',
   'Data și ora': 'Дата и время',
   'Total la locație': 'Итого на месте',
   'Continuând, accepți regulile de programare și folosirea datelor doar pentru gestionarea vizitei.':
@@ -124,23 +125,19 @@ const russian: Record<string, string> = {
   'Creează programarea demo': 'Создать тестовую запись',
   'Verifică și confirmă': 'Проверить и подтвердить',
   'Trimite codul': 'Отправить код',
-  'Scrie numărul complet, cu prefixul de țară.':
-    'Введи полный номер с кодом страны.',
   'Autentificarea devine activă după conectarea proiectului Supabase.':
     'Вход заработает после подключения проекта Supabase.',
   'Codul nu a putut fi trimis. Încearcă din nou peste câteva momente.':
     'Не удалось отправить код. Попробуй ещё раз через несколько минут.',
   'Codul nu este valid sau a expirat. Cere un cod nou.':
     'Код неверен или истёк. Запроси новый код.',
-  'Cod de test: {code}. Nu se trimite niciun SMS.':
-    'Тестовый код: {code}. SMS не отправляется.',
+  'Cod de test: {code}. Nu se trimite niciun email.':
+    'Тестовый код: {code}. Письмо не отправляется.',
   'Sesiune demonstrativă': 'Демонстрационная сессия',
   'Acces securizat': 'Безопасный доступ',
   'Vizitele tale, într-un singur loc.': 'Все твои визиты в одном месте.',
-  'Folosește același număr confirmat la programare. Nu ai nevoie de parolă sau email.':
-    'Используй тот же номер, который подтверждён при записи. Пароль и email не нужны.',
-  'Număr de telefon': 'Номер телефона',
-  'Cod SMS': 'Код из SMS',
+  'Folosește aceeași adresă de email confirmată la programare. Nu ai nevoie de parolă.':
+    'Используй тот же email, который подтверждён при записи. Пароль не нужен.',
   'Intră în cont': 'Войти',
   'Mută vizita': 'Перенести визит',
   Anulează: 'Отменить',
@@ -219,8 +216,8 @@ const russian: Record<string, string> = {
     'В деморежиме изменения не сохраняются.',
   'Starea nu a putut fi actualizată. Reîncarcă programările.':
     'Не удалось обновить статус. Перезагрузи записи.',
-  'Completează serviciul, ora, numele și telefonul.':
-    'Укажи услугу, время, имя и телефон.',
+  'Completează serviciul, ora, numele și emailul.':
+    'Укажи услугу, время, имя и email.',
   'Formularul este funcțional; salvarea devine activă după conectarea bazei.':
     'Форма работает; сохранение станет доступно после подключения базы.',
   'Programarea nu a fost salvată. Verifică dacă ora este încă liberă.':
@@ -316,10 +313,10 @@ const russian: Record<string, string> = {
   'Apar pe pagina de programare și în confirmare.':
     'Показываются на странице записи и в подтверждении.',
   'Numele afișat': 'Отображаемое имя',
-  'Telefon afișat': 'Отображаемый телефон',
   'Descriere scurtă': 'Краткое описание',
   'Adresa completă': 'Полный адрес',
-  'Telefon pentru apel (format +40…)': 'Телефон для звонка (формат +40…)',
+  'Email indisponibil momentan.': 'Email сейчас недоступен.',
+  'Scrie-ne dacă întârzii.': 'Напиши нам, если опаздываешь.',
   'Locul de primire (opțional)': 'Место приёма (необязательно)',
   Reguli: 'Правила',
   'Se aplică automat programărilor făcute de client.':
@@ -380,10 +377,10 @@ const english: Record<string, string> = {
   'Programare individuală': 'Private appointment',
   'Ora ta.': 'Your time.',
   'Fără așteptare.': 'No waiting.',
-  'Alegi serviciul, ziua și ora. Confirmi telefonul, iar locul este rezervat.':
-    'Choose a service, day and time. Confirm your phone and your slot is reserved.',
-  'Alegi serviciul, ziua și ora. În modul demonstrativ nu ai nevoie de telefon.':
-    'Choose a service, day and time. No phone is needed in demo mode.',
+  'Alegi serviciul, ziua și ora. Confirmi adresa de email, iar locul este rezervat.':
+    'Choose a service, day and time. Confirm your email and your slot is reserved.',
+  'Alegi serviciul, ziua și ora. În modul demonstrativ nu ai nevoie de email.':
+    'Choose a service, day and time. No email is needed in demo mode.',
   'Un singur client': 'One client at a time',
   'Timpul nu se împarte între programări.':
     'Your appointment time is entirely yours.',
@@ -417,23 +414,22 @@ const english: Record<string, string> = {
     'That time is too soon. Choose a later slot.',
   'Ai deja numărul maxim de programări viitoare.':
     'You already have the maximum number of upcoming appointments.',
-  'Confirmă numărul de telefon pentru a continua.':
-    'Confirm your phone number to continue.',
+  'Confirmă adresa de email pentru a continua.':
+    'Confirm your email address to continue.',
   'Nu am putut finaliza cererea. Verifică datele și încearcă din nou.':
     'We could not complete the request. Check the details and try again.',
   'A apărut o problemă temporară. Încearcă din nou.':
     'A temporary problem occurred. Try again.',
-  'Scrie numărul complet, inclusiv prefixul de țară, de exemplu +40.':
-    'Enter the full number with country code, for example +40.',
+  'Scrie o adresă de email validă.': 'Enter a valid email address.',
   'Completează numele și păstrează ora selectată.':
     'Enter your name and keep the selected time.',
   'Codul conține 6 cifre.': 'The code has 6 digits.',
   'Programare confirmată': 'Appointment confirmed',
   'Ne vedem {date}.': 'See you {date}.',
   Preț: 'Price',
-  'Confirmarea este trimisă la {phone}.': 'Confirmation was sent to {phone}.',
-  'Programarea demonstrativă a fost salvată. Nu se trimite niciun SMS.':
-    'The demo appointment was saved. No SMS is sent.',
+  'Confirmarea este trimisă la {email}.': 'Confirmation was sent to {email}.',
+  'Programarea demonstrativă a fost salvată. Nu se trimite niciun email.':
+    'The demo appointment was saved. No email is sent.',
   'Vezi vizitele mele': 'View my appointments',
   'Nu există încă servicii active. Frizerul trebuie să adauge cel puțin unul în setări.':
     'There are no active services yet. The barber needs to add one in settings.',
@@ -447,8 +443,8 @@ const english: Record<string, string> = {
   'Mod demonstrativ.': 'Demo mode.',
   'Poți parcurge alegerea serviciului și a orei; confirmarea devine activă după conectarea Supabase.':
     'You can choose a service and time; confirmation becomes available after Supabase is connected.',
-  'Poți testa programarea completă fără telefon sau cod SMS. Datele dispar după reîncărcare.':
-    'You can test the complete booking flow without a phone number or SMS code. Data resets after a reload.',
+  'Poți testa programarea completă fără email sau cod. Datele dispar după reîncărcare.':
+    'You can test the complete booking flow without an email address or code. Data resets after a reload.',
   'Ce alegi?': 'What would you like?',
   'Durata este rezervată integral pentru tine.':
     'The full duration is reserved for you.',
@@ -464,17 +460,18 @@ const english: Record<string, string> = {
   'Alege o altă dată pentru a continua.': 'Choose another date to continue.',
   'Schimbă data': 'Change date',
   'Confirmă programarea.': 'Confirm your appointment.',
-  'Numărul este folosit pentru cod și notificări despre vizită.':
-    'Your number is used for the code and appointment notifications.',
-  'În modul demonstrativ nu este necesar un număr de telefon.':
-    'A phone number is not required in demo mode.',
+  'Adresa de email este folosită pentru cod și notificări despre vizită.':
+    'Your email address is used for the code and appointment notifications.',
+  'În modul demonstrativ nu este necesară o adresă de email.':
+    'An email address is not required in demo mode.',
   'Numele tău': 'Your name',
   'Cum să te trecem în programare': 'Name for the appointment',
-  Telefon: 'Phone',
-  'Include prefixul de țară.': 'Include the country code.',
-  'Codul SMS': 'SMS code',
-  'Schimbă numărul': 'Change number',
-  'Telefon confirmat:': 'Phone confirmed:',
+  'Adresă de email': 'Email address',
+  'Vei primi un cod de confirmare pe email.':
+    'You will receive a confirmation code by email.',
+  'Cod din email': 'Code from email',
+  'Schimbă adresa': 'Change address',
+  'Email confirmat:': 'Email confirmed:',
   'Data și ora': 'Date and time',
   'Total la locație': 'Total at location',
   'Continuând, accepți regulile de programare și folosirea datelor doar pentru gestionarea vizitei.':
@@ -486,23 +483,19 @@ const english: Record<string, string> = {
   'Creează programarea demo': 'Create demo appointment',
   'Verifică și confirmă': 'Verify and confirm',
   'Trimite codul': 'Send code',
-  'Scrie numărul complet, cu prefixul de țară.':
-    'Enter the full number with country code.',
   'Autentificarea devine activă după conectarea proiectului Supabase.':
     'Sign-in becomes available after the Supabase project is connected.',
   'Codul nu a putut fi trimis. Încearcă din nou peste câteva momente.':
     'The code could not be sent. Try again in a few moments.',
   'Codul nu este valid sau a expirat. Cere un cod nou.':
     'The code is invalid or expired. Request a new code.',
-  'Cod de test: {code}. Nu se trimite niciun SMS.':
-    'Test code: {code}. No SMS is sent.',
+  'Cod de test: {code}. Nu se trimite niciun email.':
+    'Test code: {code}. No email is sent.',
   'Sesiune demonstrativă': 'Demo session',
   'Acces securizat': 'Secure access',
   'Vizitele tale, într-un singur loc.': 'All your appointments in one place.',
-  'Folosește același număr confirmat la programare. Nu ai nevoie de parolă sau email.':
-    'Use the same number confirmed when booking. No password or email is needed.',
-  'Număr de telefon': 'Phone number',
-  'Cod SMS': 'SMS code',
+  'Folosește aceeași adresă de email confirmată la programare. Nu ai nevoie de parolă.':
+    'Use the same email address confirmed when booking. No password is needed.',
   'Intră în cont': 'Sign in',
   'Mută vizita': 'Move appointment',
   Anulează: 'Cancel',
@@ -583,8 +576,8 @@ const english: Record<string, string> = {
     'Changes are not saved in demo mode.',
   'Starea nu a putut fi actualizată. Reîncarcă programările.':
     'The status could not be updated. Reload the appointments.',
-  'Completează serviciul, ora, numele și telefonul.':
-    'Enter the service, time, name and phone number.',
+  'Completează serviciul, ora, numele și emailul.':
+    'Enter the service, time, name and email address.',
   'Formularul este funcțional; salvarea devine activă după conectarea bazei.':
     'The form works; saving becomes available after the database is connected.',
   'Programarea nu a fost salvată. Verifică dacă ora este încă liberă.':
@@ -680,10 +673,10 @@ const english: Record<string, string> = {
   'Apar pe pagina de programare și în confirmare.':
     'Shown on the booking page and in the confirmation.',
   'Numele afișat': 'Display name',
-  'Telefon afișat': 'Display phone',
   'Descriere scurtă': 'Short description',
   'Adresa completă': 'Full address',
-  'Telefon pentru apel (format +40…)': 'Phone for calls (+40… format)',
+  'Email indisponibil momentan.': 'Email is currently unavailable.',
+  'Scrie-ne dacă întârzii.': 'Email us if you are running late.',
   'Locul de primire (opțional)': 'Appointment location (optional)',
   Reguli: 'Rules',
   'Se aplică automat programărilor făcute de client.':

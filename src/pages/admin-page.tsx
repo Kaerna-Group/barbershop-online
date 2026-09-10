@@ -90,7 +90,7 @@ function AdminBookings({ config }: { config: PublicConfig }) {
   const [slots, setSlots] = useState<TimeSlot[]>([])
   const [slot, setSlot] = useState('')
   const [clientName, setClientName] = useState('')
-  const [clientPhone, setClientPhone] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
   const [blockStart, setBlockStart] = useState('12:00')
   const [blockEnd, setBlockEnd] = useState('12:30')
   const [blockNote, setBlockNote] = useState('Pauză')
@@ -157,9 +157,9 @@ function AdminBookings({ config }: { config: PublicConfig }) {
       !selectedService ||
       !slot ||
       clientName.trim().length < 2 ||
-      !clientPhone.trim()
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim())
     ) {
-      setError(t('Completează serviciul, ora, numele și telefonul.'))
+      setError(t('Completează serviciul, ora, numele și emailul.'))
       return
     }
     setActionBusy(true)
@@ -168,12 +168,12 @@ function AdminBookings({ config }: { config: PublicConfig }) {
         serviceId: selectedService.id,
         startsAt: slot,
         clientName: clientName.trim(),
-        clientPhone: clientPhone.trim(),
+        clientEmail: clientEmail.trim().toLowerCase(),
         requestId: crypto.randomUUID(),
       })
       setManualOpen(false)
       setClientName('')
-      setClientPhone('')
+      setClientEmail('')
       await loadEntries()
     } catch {
       setError(
@@ -315,7 +315,7 @@ function AdminBookings({ config }: { config: PublicConfig }) {
                   </h3>
                   <p>
                     {entry.kind === 'booking'
-                      ? [entry.serviceName, entry.clientPhone]
+                      ? [entry.serviceName, entry.clientEmail]
                           .filter(Boolean)
                           .join(' · ')
                       : `${formatTime(
@@ -437,10 +437,11 @@ function AdminBookings({ config }: { config: PublicConfig }) {
               onChange={(event) => setClientName(event.target.value)}
             />
             <Field
-              label={t('Telefon')}
-              type="tel"
-              value={clientPhone}
-              onChange={(event) => setClientPhone(event.target.value)}
+              label={t('Adresă de email')}
+              type="email"
+              autoComplete="email"
+              value={clientEmail}
+              onChange={(event) => setClientEmail(event.target.value)}
             />
           </div>
           <div className="modal-actions">
@@ -884,14 +885,16 @@ function AdminSettings({ initialConfig }: { initialConfig: PublicConfig }) {
               }
             />
             <Field
-              label={t('Telefon afișat')}
-              value={config.profile.phoneDisplay}
+              label={t('Adresă de email')}
+              type="email"
+              autoComplete="email"
+              value={config.profile.email ?? ''}
               onChange={(event) =>
                 setConfig((current) => ({
                   ...current,
                   profile: {
                     ...current.profile,
-                    phoneDisplay: event.target.value,
+                    email: event.target.value || null,
                   },
                 }))
               }
@@ -921,19 +924,6 @@ function AdminSettings({ initialConfig }: { initialConfig: PublicConfig }) {
             }
           />
           <div className="form-grid">
-            <Field
-              label={t('Telefon pentru apel (format +40…)')}
-              value={config.profile.phoneHref ?? ''}
-              onChange={(event) =>
-                setConfig((current) => ({
-                  ...current,
-                  profile: {
-                    ...current.profile,
-                    phoneHref: event.target.value || null,
-                  },
-                }))
-              }
-            />
             <Field
               label={t('Locul de primire (opțional)')}
               value={config.profile.venueLabel ?? ''}

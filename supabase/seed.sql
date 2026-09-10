@@ -1,22 +1,18 @@
 -- Safe sample content. Replace every placeholder before accepting real clients.
 
 insert into public.master_profile (
-  singleton, name, short_intro, phone_display, phone_href, email, address_line, venue_label
+  singleton, name, short_intro, email, address_line, venue_label
 ) values (
   true,
   'Programare la frizer',
   'Un singur client, timpul rezervat doar pentru tine.',
-  '+40 000 000 000',
-  null,
-  null,
+  'programare@barber.test',
   'Adresa va fi completată înainte de lansare',
   null
 )
 on conflict (singleton) do update set
   name = excluded.name,
   short_intro = excluded.short_intro,
-  phone_display = excluded.phone_display,
-  phone_href = excluded.phone_href,
   email = excluded.email,
   address_line = excluded.address_line,
   venue_label = excluded.venue_label;

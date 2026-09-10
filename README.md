@@ -1,31 +1,103 @@
-# Barbershop Online
+<div align="center">
+  <img src="public/logo.svg" width="88" alt="Barbershop Online logo">
 
-Мобильный сайт онлайн-записи к одному независимому парикмахеру в Румынии. Здесь нет каталога салонов, выбора мастеров, оплат и лишней CRM: клиент выбирает услугу, дату и свободное время, подтверждает телефон и получает готовую запись.
+  <h1>Barbershop Online</h1>
 
-Интерфейс сайта доступен на румынском, английском и русском; румынский используется по умолчанию, а выбор языка сохраняется в cookie. Проект не использует фотографии: визуальный стиль строится на типографике, графитовой палитре и тёплом медном акценте.
+  <p><strong>A focused online booking experience for one independent barber.</strong></p>
+  <p>Choose a service, pick an available time, confirm by phone, and manage the appointment — without marketplace clutter.</p>
 
-## Что реализовано
+  <p>
+    <a href="https://kaerna-group.github.io/barbershop-online/"><strong>Open the live demo</strong></a>
+    ·
+    <a href="RUNBOOK.md">Production runbook</a>
+  </p>
 
-- единый четырёхшаговый поток: услуга → дата → время → подтверждение;
-- переключение RO / EN / RU с локальными форматами дат, времени и цен;
-- SMS-вход клиента через Supabase Auth без пароля и обязательного email;
-- «Мои визиты»: будущие записи, история, перенос и отмена;
-- закрытая панель одного мастера: календарь дня, ручная запись, статусы, блокировки;
-- недельный график, несколько рабочих окон в день и исключения по датам;
-- редактирование контактов, правил записи и услуг;
-- транзакционные RPC для создания, отмены и переноса;
-- запрет пересекающихся интервалов на уровне PostgreSQL;
-- идемпотентность повторных запросов и контроль версии записи;
-- очередь SMS-подтверждений, изменений, отмен и напоминаний;
-- RLS: клиент видит только собственные визиты, мастер определяется закрытой настройкой;
-- адаптивный интерфейс, состояния загрузки/ошибки/пустого дня и клавиатурная навигация;
-- GitHub Actions для проверок и публикации на GitHub Pages.
+  <p>
+    <img src="https://img.shields.io/github/actions/workflow/status/Kaerna-Group/barbershop-online/deploy-pages.yml?branch=main&label=deployment&logo=github" alt="Deployment status">
+    <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111111" alt="React 19">
+    <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" alt="TypeScript strict">
+    <img src="https://img.shields.io/badge/Supabase-ready-3FCF8E?logo=supabase&logoColor=white" alt="Supabase ready">
+    <img src="https://img.shields.io/badge/languages-RO%20%7C%20EN%20%7C%20RU-CB7441" alt="Romanian, English, and Russian">
+  </p>
+</div>
 
-## Стек
+## Preview
 
-React 19, TypeScript strict, Vite, Tailwind CSS 4, React Router, Supabase JS, PostgreSQL, Supabase Auth и Edge Functions. Структура — облегчённый FSD без пустых слоёв.
+<p align="center">
+  <img src="docs/screenshots/booking-home-desktop.png" width="100%" alt="Public booking flow with service selection">
+</p>
 
-## Быстрый запуск
+<p align="center">
+  <img src="docs/screenshots/admin-login-desktop.png" width="82%" alt="Private owner dashboard sign-in">
+</p>
+
+## Product
+
+Barbershop Online is intentionally small in scope: one barber, one address, and one clear booking journey. It is not a salon marketplace, CRM, payment platform, or staff-management system.
+
+The interface is available in Romanian, English, and Russian. Romanian is the default language, and the selected language is stored in a cookie. The visual identity uses typography, a graphite palette, and warm copper accents instead of photography.
+
+### Customer experience
+
+- Four-step booking flow: service → date → time → confirmation.
+- Phone verification through Supabase Auth.
+- Upcoming and past appointment history.
+- Self-service rescheduling and cancellation within the configured rules.
+- Localized dates, times, prices, validation, and status messages.
+- Responsive and keyboard-accessible interactions.
+
+### Owner experience
+
+- Private sign-in for the single barber.
+- Daily calendar and appointment status management.
+- Manual bookings and unavailable-time blocks.
+- Weekly working hours with multiple intervals per day.
+- Date-specific schedule exceptions.
+- Editable services, contact details, and booking rules.
+
+### Reliability and security
+
+- PostgreSQL exclusion constraints prevent overlapping appointments.
+- Transactional RPCs handle booking, cancellation, and rescheduling.
+- Idempotency keys make repeated requests safe.
+- Row Level Security limits customers to their own appointments.
+- The owner identity is stored in protected application settings.
+- An SMS outbox supports confirmations, changes, cancellations, and reminders.
+
+## Technology
+
+| Area     | Technology                                 |
+| -------- | ------------------------------------------ |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4 |
+| Routing  | React Router                               |
+| Backend  | Supabase, PostgreSQL, Auth, Edge Functions |
+| Quality  | Vitest, Testing Library, ESLint, Prettier  |
+| Delivery | GitHub Actions, GitHub Pages               |
+
+The source follows a lightweight feature-oriented structure:
+
+```text
+src/
+├── app/       # application composition and routes
+├── pages/     # page-level composition
+├── features/  # complete user actions
+└── shared/    # reusable UI, utilities, and infrastructure
+```
+
+Availability rules are authoritative on the server. The frontend presents available choices, while PostgreSQL and RPC functions validate every mutation again.
+
+## Live demo
+
+The published showcase currently runs in full mock mode so anyone can explore the complete interface without creating real users or changing the production database.
+
+| Role     | Credentials                                           |
+| -------- | ----------------------------------------------------- |
+| Customer | Any valid phone number, OTP code <code>000000</code>  |
+| Owner    | <code>demo@barber.test</code> / <code>demo1234</code> |
+
+Mock data lives only in the current browser tab and resets after a reload.
+
+## Local development
 
 ```bash
 npm ci
@@ -33,9 +105,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Без переменных Supabase приложение запускается в полном мок-режиме. В нём можно проверить запись, перенос, отмену, календарь мастера, график, блокировки, услуги и настройки. Данные хранятся только в памяти вкладки и сбрасываются после перезагрузки; реальная база не изменяется.
-
-Для рабочего режима заполните:
+The application starts in mock mode when Supabase variables are absent. To configure an environment explicitly:
 
 ```dotenv
 VITE_SUPABASE_URL=https://PROJECT_REF.supabase.co
@@ -43,46 +113,66 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 VITE_USE_MOCKS=true
 ```
 
-При `VITE_USE_MOCKS=true` приложение намеренно не обращается к Supabase, даже если URL и publishable key заполнены.
+When <code>VITE_USE_MOCKS=true</code>, the frontend never contacts Supabase, even if the URL and publishable key are present. Set it to <code>false</code> only after the database, owner account, phone provider, and notification worker are ready.
 
-Тестовые данные:
+## Supabase setup
 
-- клиент: любой корректный телефон, SMS-код `000000`;
-- мастер: `demo@barber.test`, пароль `demo1234`.
+1. Create separate Supabase projects for testing and production.
+2. Authenticate and link the CLI:
 
-Для перехода на реальные данные установите `VITE_USE_MOCKS=false`, создайте Auth-пользователя мастера и завершите настройку SMS из [RUNBOOK.md](RUNBOOK.md).
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref YOUR_PROJECT_REF
+   ```
 
-Дальнейшая настройка базы, SMS и аккаунта мастера описана в [RUNBOOK.md](RUNBOOK.md).
+3. Apply the versioned migrations:
 
-## Команды
+   ```bash
+   npx supabase db push
+   ```
+
+4. Review and load <code>supabase/seed.sql</code>.
+5. Create the owner in Supabase Auth and assign the user's UUID to <code>app_settings.master_user_id</code>.
+6. Configure phone authentication and deploy the notification Edge Function.
+7. Follow the complete [production runbook](RUNBOOK.md) before disabling mock mode.
+
+Only the project URL and publishable key belong in the frontend. Service-role keys, SMS tokens, and worker secrets must remain server-side.
+
+## Commands
 
 ```bash
-npm run typecheck
-npm run lint
-npm run test
-npm run build
-npm run format:check
+npm run check          # typecheck, tests, and production build
+npm run lint           # ESLint
+npm run format:check   # Prettier verification
+npm run dev            # local development server
+npm run preview        # preview the production build
 ```
 
-## Маршруты
+## Routes
 
-- `/` — запись и краткие правила;
-- `/my-bookings` — визиты подтверждённого клиента;
-- `/admin/login` — вход единственного мастера;
-- `/admin` — календарь, график и настройки.
+| Route                     | Purpose                                         |
+| ------------------------- | ----------------------------------------------- |
+| <code>/</code>            | Public booking flow and essential booking rules |
+| <code>/my-bookings</code> | Appointments for the verified customer          |
+| <code>/admin/login</code> | Private owner sign-in                           |
+| <code>/admin</code>       | Calendar, schedule, services, and settings      |
 
-Для прямых ссылок на GitHub Pages добавлен безопасный SPA-redirect через `404.html`.
+GitHub Pages deep links are supported through the included SPA fallback.
 
-## Ключевые правила
+## Default booking rules
 
-- шаг начала: 30 минут, меняется мастером;
-- минимум до визита: 2 часа;
-- горизонт: 30 дней, крайняя дата включительно;
-- самостоятельный перенос/отмена: не позднее чем за 12 часов;
-- максимум 3 будущие подтверждённые записи на аккаунт;
-- часовой пояс: `Europe/Bucharest`;
-- валюта: RON;
-- следующая запись может начаться ровно в момент окончания предыдущей;
-- мастер может обойти лимиты клиента, но не график и не запрет пересечений.
+- 30-minute start-time step.
+- Minimum notice: 2 hours.
+- Booking horizon: 30 days, including the last day.
+- Customer cancellation or rescheduling: at least 12 hours before the visit.
+- Maximum of 3 upcoming confirmed appointments per customer.
+- Time zone: <code>Europe/Bucharest</code>.
+- Currency: RON, stored in minor units.
+- A new appointment may start exactly when the previous one ends.
+- The owner may override customer limits, but never working hours or overlap protection.
 
-Все правила повторно проверяются в базе. Клиентский интерфейс не является границей безопасности.
+## Production status
+
+The Supabase schema, migrations, RLS policies, RPCs, Auth integration, and notification function are implemented. The public deployment remains a safe showcase until real owner data, a production SMS provider, server-side secrets, and launch checks are completed.
+
+See [RUNBOOK.md](RUNBOOK.md) for the exact production activation and recovery procedure.

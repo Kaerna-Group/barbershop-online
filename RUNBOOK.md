@@ -1,38 +1,52 @@
-# Runbook
+# Production Runbook
 
-## 1. Подготовить Supabase
+This runbook takes Barbershop Online from the public mock showcase to a real Supabase-backed booking service for one barber at one address.
 
-Создайте отдельные проекты Supabase для тестового и рабочего окружения. В каждом выполните миграции из `supabase/migrations` по порядку, затем загрузите `supabase/seed.sql`.
+## 1. Prepare Supabase environments
 
-Через CLI это выглядит так:
+Create separate Supabase projects for testing and production. Never validate destructive changes against the production project first.
+
+Authenticate the CLI, link the intended project, and inspect the link before applying migrations:
 
 ```bash
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
-supabase db push
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase db push
 ```
 
-После миграций выполните `supabase/seed.sql` через SQL Editor проекта. Локально seed применяется командой `supabase db reset`.
+Apply every file in <code>supabase/migrations</code> in order. Do not edit a migration that has already been applied; create a new migration for every schema change.
 
-Не публикуйте service role key и токены SMS. Во фронтенд передаются только URL проекта и публичный anon/publishable key.
+Review <code>supabase/seed.sql</code> before loading it through the SQL Editor. For a local Supabase stack, <code>npx supabase db reset</code> recreates the database and applies the seed.
 
-## 2. Заполнить реальные данные
+Security rules:
 
-До приёма клиентов замените демонстрационные значения через панель мастера или SQL:
+- expose only the project URL and publishable/anon key to the frontend;
+- never commit the service-role key, CLI access token, SMS token, or worker secret;
+- use separate credentials and secrets for testing and production.
 
-- имя;
-- телефон и единственный адрес в Румынии;
-- необязательное название места приёма;
-- услуги, длительности и цены в RON;
-- недельный график и исключения.
+## 2. Replace showcase data
 
-В проекте намеренно нет фотографий, галереи, сущностей салона и сотрудников.
+Before accepting real appointments, replace every placeholder through the owner dashboard or reviewed SQL:
 
-## 3. Создать аккаунт мастера
+- barber name;
+- phone number and single Romanian address;
+- optional venue name;
+- services, durations, and prices in RON;
+- weekly working hours;
+- date-specific exceptions;
+- minimum notice, booking horizon, change cutoff, and customer limit.
 
-1. В Supabase Auth создайте email-пользователя с сильным паролем и подтверждённым email.
-2. Скопируйте его UUID.
-3. Один раз выполните в SQL Editor:
+Prices are stored in minor currency units. Appointment timestamps are stored as <code>timestamptz</code> and displayed in <code>Europe/Bucharest</code>.
+
+The product intentionally has no galleries, staff, branches, online payments, CRM, or marketplace entities.
+
+## 3. Create the owner account
+
+1. In Supabase Dashboard, open **Authentication → Users**.
+2. Create an email user with a strong unique password.
+3. Confirm the owner's email.
+4. Copy the Auth user UUID.
+5. Run this statement once in the SQL Editor:
 
 ```sql
 update public.app_settings
@@ -40,20 +54,27 @@ set master_user_id = 'MASTER_AUTH_USER_UUID'
 where singleton;
 ```
 
-Не добавляйте публичную регистрацию мастера. Сброс пароля настраивается только на подтверждённый email владельца.
+Verify that exactly one user is treated as the owner and that an ordinary customer cannot access owner RPCs or data.
 
-## 4. Настроить телефонный вход
+Do not expose owner registration. Password recovery must target only the verified owner email.
 
-В Supabase Auth включите Phone provider и подключите поддерживаемого SMS-провайдера. Добавьте адреса:
+## 4. Configure customer phone authentication
 
-- локально: `http://localhost:5173/**`;
-- production: `https://kaerna-group.github.io/barbershop-online/**`.
+In Supabase Auth:
 
-Ограничение повторной отправки OTP оставьте не слабее 60 секунд. Проверьте вход реальным румынским номером в тестовом проекте.
+1. Enable the Phone provider.
+2. Connect a supported SMS provider.
+3. Add the allowed redirect URLs:
+   - local: <code>http://localhost:5173/**</code>
+   - production: <code>https://kaerna-group.github.io/barbershop-online/**</code>
+4. Keep the OTP resend interval at 60 seconds or longer.
+5. Test sign-in, sign-out, session restoration, and an expired code with a real Romanian phone number in the test project.
 
-## 5. Настроить уведомления о визитах
+Never log phone numbers, OTP codes, access tokens, or session contents.
 
-Edge Function `send-notifications` ожидает универсальный HTTPS endpoint SMS-провайдера. Он получает JSON:
+## 5. Deploy appointment notifications
+
+The <code>send-notifications</code> Edge Function calls a generic HTTPS SMS endpoint with:
 
 ```json
 {
@@ -63,55 +84,97 @@ Edge Function `send-notifications` ожидает универсальный HTT
 }
 ```
 
-Задайте секреты и разверните функцию:
+Set the production secrets and deploy the function:
 
 ```bash
-supabase secrets set SMS_WEBHOOK_URL=https://provider.example/send
-supabase secrets set SMS_WEBHOOK_TOKEN=...
-supabase secrets set NOTIFICATION_WORKER_SECRET=...
-supabase functions deploy send-notifications
+npx supabase secrets set SMS_WEBHOOK_URL=https://provider.example/send
+npx supabase secrets set SMS_WEBHOOK_TOKEN=replace-with-provider-token
+npx supabase secrets set NOTIFICATION_WORKER_SECRET=replace-with-a-long-random-value
+npx supabase functions deploy send-notifications
 ```
 
-В Supabase Cron создайте POST-вызов функции раз в минуту. Передавайте два заголовка:
+Create a Supabase Cron job that invokes the function once per minute. Send both headers:
 
-- `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>` — для проверки JWT на входе Edge Function;
-- `x-worker-secret: <NOTIFICATION_WORKER_SECRET>` — второй независимый секрет воркера.
+- <code>Authorization: Bearer &lt;SUPABASE_SERVICE_ROLE_KEY&gt;</code> for Edge Function JWT verification;
+- <code>x-worker-secret: &lt;NOTIFICATION_WORKER_SECRET&gt;</code> as the independent worker credential.
 
-Оба значения храните в Supabase Vault или в защищённых настройках планировщика, не в SQL миграции и не в репозитории. Сбой SMS не удаляет запись; задача повторяется с увеличивающейся задержкой до пяти попыток.
+Store both values in Supabase Vault or protected scheduler configuration. Do not place them in a migration or repository file.
 
-## 6. GitHub Pages
+An SMS failure must not delete or roll back an appointment. Notification jobs retry with increasing delay for up to five attempts.
 
-В настройках репозитория выберите Pages → Source → GitHub Actions. Добавьте repository secrets:
+## 6. Configure GitHub Pages
 
-- `VITE_SUPABASE_URL`;
-- `VITE_SUPABASE_PUBLISHABLE_KEY`.
+In the repository:
 
-Для проверки без реальных пользователей задайте repository variable `VITE_USE_MOCKS=true`. В этом режиме production-сборка не обращается к Supabase, а все временные изменения сбрасываются после перезагрузки.
+1. Open **Settings → Pages**.
+2. Set the source to **GitHub Actions**.
+3. Add repository secrets:
+   - <code>VITE_SUPABASE_URL</code>
+   - <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>
+4. Keep the repository variable <code>VITE_USE_MOCKS=true</code> while the site is a public showcase.
 
-Перед реальным запуском смените её на `VITE_USE_MOCKS=false`. Push в `main` запускает проверки, сборку и публикацию.
+With mock mode enabled, the production bundle does not contact Supabase and all temporary changes reset after a reload.
 
-## 7. Проверка перед запуском
+Only after every launch check passes, change <code>VITE_USE_MOCKS</code> to <code>false</code> and redeploy from <code>main</code>.
 
-Обязательно пройти на тестовой базе:
+## 7. Launch validation
 
-1. два одновременных запроса на одно время — успешен только один;
-2. повтор с тем же `request_id` — возвращает тот же результат;
-3. лимит в 3 будущие записи под конкуренцией;
-4. перенос в занятое время — исходный визит остаётся;
-5. клиент не видит чужие визиты;
-6. ручная запись и блокировка не могут пересекаться;
-7. границы ровно 2 и 12 часов разрешены;
-8. крайняя дата `сегодня + 30` разрешена;
-9. смена летнего времени в `Europe/Bucharest` не меняет локальное отображение;
-10. устаревшее напоминание после переноса не отправляется.
-
-Запустить локальные проверки:
+Run the project checks:
 
 ```bash
 npm run check
-supabase test db
+npm run lint
+npm run format:check
+npx supabase test db
 ```
 
-## 8. Резервирование и восстановление
+Validate these scenarios against the test project:
 
-Проверьте доступность автоматических backup в выбранном тарифе Supabase. Если их нет — настройте регулярный логический экспорт PostgreSQL. Не храните экспорт рядом с кодом. Восстановление сначала проверяйте в отдельном проекте с отключённой Edge Function и SMS.
+1. Two simultaneous requests for the same slot: exactly one succeeds.
+2. A retry with the same <code>request_id</code>: the original result is returned.
+3. The three-upcoming-appointments limit remains correct under concurrency.
+4. Rescheduling to an occupied slot fails without changing the original appointment.
+5. A customer cannot read or mutate another customer's appointments.
+6. Manual appointments and unavailable-time blocks cannot overlap.
+7. The exact 2-hour notice and 12-hour change boundaries are accepted.
+8. The final date at today + 30 days is accepted.
+9. A daylight-saving transition does not change the displayed Bucharest local time.
+10. An obsolete reminder is not sent after an appointment is moved.
+11. Direct GitHub Pages links load correctly for all routes.
+12. Romanian, English, and Russian copy fits on desktop and mobile layouts.
+
+Before launch, also verify:
+
+- the real address, services, prices, and schedule;
+- the owner email recovery flow;
+- SMS delivery, retry behavior, and provider limits;
+- RLS policies with customer and owner accounts;
+- browser console and server logs contain no personal data or secrets;
+- <code>VITE_USE_MOCKS=false</code> is present in the deployed build.
+
+## 8. Backup and recovery
+
+Confirm which automated backups are included in the selected Supabase plan. If they are unavailable, schedule encrypted logical PostgreSQL exports and store them outside the source repository.
+
+Test restoration in a separate Supabase project first:
+
+1. disable Cron and the notification Edge Function;
+2. restore the database;
+3. verify migrations, RLS, RPCs, and appointment counts;
+4. test customer and owner access;
+5. enable outbound SMS only after data validation succeeds.
+
+Keep a documented recovery owner, backup location, retention period, and last successful restore-test date.
+
+## 9. Rollback
+
+If the real deployment shows incorrect availability, authorization, or notification behavior:
+
+1. set <code>VITE_USE_MOCKS=true</code> and redeploy the public site;
+2. disable the notification Cron job if messages may be wrong;
+3. preserve logs without copying personal data into tickets or chat;
+4. diagnose in the test project;
+5. ship schema corrections as a new migration;
+6. rerun the complete launch checklist before returning to live mode.
+
+Do not rewrite applied migrations or restore production directly over the current database without a tested recovery plan.

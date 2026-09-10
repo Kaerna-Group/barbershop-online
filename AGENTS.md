@@ -1,28 +1,28 @@
-# Правила работы с проектом
+# Project Working Rules
 
-## Границы продукта
+## Product boundaries
 
-Это запись к одному парикмахеру по одному адресу. Не добавлять выбор мастера, салона, филиалов, платежи, CRM, аналитику и фотографии без нового прямого запроса владельца.
+This product provides appointment booking for one barber at one address. Do not add barber selection, salons, branches, payments, CRM, analytics, or photography without a new explicit request from the owner.
 
-## Архитектура
+## Architecture
 
-- `app` знает обо всех слоях и собирает маршруты;
-- `pages` собирают страницы из features/shared;
-- `features` содержат законченные пользовательские действия;
-- `shared` не импортирует pages/features;
-- серверные правила доступности не дублировать как источник истины во фронтенде;
-- все изменения схемы — только новой миграцией, применённые миграции не переписывать;
-- прямые клиентские записи в календарь, график и настройки запрещены — использовать RPC.
+- <code>app</code> knows about every layer and assembles the routes.
+- <code>pages</code> compose pages from <code>features</code> and <code>shared</code>.
+- <code>features</code> contain complete user actions.
+- <code>shared</code> must not import <code>pages</code> or <code>features</code>.
+- Do not duplicate server-side availability rules in the frontend as a source of truth.
+- Every schema change must be a new migration; never rewrite an applied migration.
+- Direct client writes to the calendar, schedule, or settings are forbidden; use RPC functions.
 
-## Код
+## Code
 
-- TypeScript strict, без `any` в прикладном коде;
-- видимый текст интерфейса — на румынском;
-- все даты визитов хранятся как `timestamptz`, показываются в `Europe/Bucharest`;
-- цены хранятся в минимальных денежных единицах;
-- мутации должны иметь явные loading/error/success состояния;
-- новые интерактивные элементы должны работать с клавиатуры и иметь доступное имя;
-- не помещать телефоны, OTP, токены и секреты в логи;
-- не использовать localStorage как базу клиентских данных.
+- Use strict TypeScript and avoid <code>any</code> in application code.
+- Localize all visible interface text; Romanian is the default language.
+- Store appointment dates as <code>timestamptz</code> and display them in <code>Europe/Bucharest</code>.
+- Store prices in minor currency units.
+- Mutations must expose explicit loading, error, and success states.
+- New interactive elements must support keyboard use and have an accessible name.
+- Never write phone numbers, OTP codes, tokens, or secrets to logs.
+- Do not use <code>localStorage</code> as the customer-data store.
 
-Перед изменением выполнить `npm run check`; после изменения повторить проверки, связанные с затронутым кодом.
+Run <code>npm run check</code> before making changes. After changes, rerun every check relevant to the affected code.
